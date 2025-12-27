@@ -24,10 +24,19 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-surface-1 border-r border-surface-2 flex flex-col">
       <div className="p-6 border-b border-surface-2">
-        <h1 className="text-2xl font-bold bg-gradient-to-br from-draft-blue-700 to-track-orange-700 bg-clip-text text-transparent">
-          TRACKdrafT
-        </h1>
-        <p className="text-xs text-text-tertiary mt-1">Draft Your Next Hit</p>
+        <div className="flex items-center gap-3">
+          <img 
+            src="/logo.png" 
+            alt="TRACKdrafT Logo" 
+            className="h-10 w-auto"
+          />
+          <div>
+            <h1 className="text-2xl font-bold bg-gradient-to-br from-draft-blue-700 to-track-orange-700 bg-clip-text text-transparent">
+              TRACKdrafT
+            </h1>
+            <p className="text-xs text-text-tertiary mt-1">Draft Your Next Hit</p>
+          </div>
+        </div>
       </div>
       
       <nav className="flex-1 p-4">
