@@ -1,4 +1,4 @@
-import { Chord, Key } from '../types/music';
+import { Chord, Key } from '../../types/music';
 import { romanNumeralToChord, getScaleDegrees } from './keyUtils';
 
 /**

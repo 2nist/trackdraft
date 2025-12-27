@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react';
-import { getAllRhymeSuggestions, DatamuseWord } from '../../lib/lyrics/datamuseApi';
-import { Loader2, X, Sparkles } from 'lucide-react';
+import { useState, useEffect } from "react";
+import {
+  getAllRhymeSuggestions,
+  DatamuseWord,
+} from "../../lib/lyrics/datamuseApi";
+import { useToastStore } from "../../store/toastStore";
+import { Loader2, X, Sparkles } from "lucide-react";
 
 interface RhymeSuggestionPanelProps {
   word: string;
@@ -8,7 +12,12 @@ interface RhymeSuggestionPanelProps {
   onClose: () => void;
 }
 
-export default function RhymeSuggestionPanel({ word, onSelect, onClose }: RhymeSuggestionPanelProps) {
+export default function RhymeSuggestionPanel({
+  word,
+  onSelect,
+  onClose,
+}: RhymeSuggestionPanelProps) {
+  const { showError } = useToastStore();
   const [suggestions, setSuggestions] = useState<{
     perfect: DatamuseWord[];
     near: DatamuseWord[];
@@ -16,22 +25,40 @@ export default function RhymeSuggestionPanel({ word, onSelect, onClose }: RhymeS
     consonance: DatamuseWord[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'perfect' | 'near' | 'assonance' | 'consonance'>('perfect');
+  const [activeTab, setActiveTab] = useState<
+    "perfect" | "near" | "assonance" | "consonance"
+  >("perfect");
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     if (!word) return;
 
     setLoading(true);
+    setHasError(false);
     getAllRhymeSuggestions(word, 15)
       .then((data) => {
         setSuggestions(data);
         setLoading(false);
+        // Check if all arrays are empty (likely an error occurred silently)
+        const hasAnySuggestions =
+          data.perfect.length > 0 ||
+          data.near.length > 0 ||
+          data.assonance.length > 0 ||
+          data.consonance.length > 0;
+        if (!hasAnySuggestions && word.length > 0) {
+          // Silently failed - API might be down
+          setHasError(true);
+        }
       })
       .catch((error) => {
-        console.error('Error loading rhyme suggestions:', error);
+        console.error("Error loading rhyme suggestions:", error);
         setLoading(false);
+        setHasError(true);
+        showError(
+          "Failed to load rhyme suggestions. Please check your internet connection."
+        );
       });
-  }, [word]);
+  }, [word, showError]);
 
   const getActiveSuggestions = () => {
     if (!suggestions) return [];
@@ -39,10 +66,26 @@ export default function RhymeSuggestionPanel({ word, onSelect, onClose }: RhymeS
   };
 
   const tabs = [
-    { id: 'perfect' as const, label: 'Perfect', count: suggestions?.perfect.length || 0 },
-    { id: 'near' as const, label: 'Near', count: suggestions?.near.length || 0 },
-    { id: 'assonance' as const, label: 'Assonance', count: suggestions?.assonance.length || 0 },
-    { id: 'consonance' as const, label: 'Consonance', count: suggestions?.consonance.length || 0 },
+    {
+      id: "perfect" as const,
+      label: "Perfect",
+      count: suggestions?.perfect.length || 0,
+    },
+    {
+      id: "near" as const,
+      label: "Near",
+      count: suggestions?.near.length || 0,
+    },
+    {
+      id: "assonance" as const,
+      label: "Assonance",
+      count: suggestions?.assonance.length || 0,
+    },
+    {
+      id: "consonance" as const,
+      label: "Consonance",
+      count: suggestions?.consonance.length || 0,
+    },
   ];
 
   return (
@@ -70,8 +113,8 @@ export default function RhymeSuggestionPanel({ word, onSelect, onClose }: RhymeS
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
               activeTab === tab.id
-                ? 'border-accent text-white'
-                : 'border-transparent text-gray-400 hover:text-white'
+                ? "border-accent text-white"
+                : "border-transparent text-gray-400 hover:text-white"
             }`}
           >
             {tab.label}
@@ -90,8 +133,23 @@ export default function RhymeSuggestionPanel({ word, onSelect, onClose }: RhymeS
         </div>
       ) : getActiveSuggestions().length === 0 ? (
         <div className="text-center py-8 text-gray-400">
-          <p>No {activeTab} rhymes found for "{word}"</p>
-          <p className="text-sm text-gray-500 mt-2">Try a different word or check spelling</p>
+          {hasError ? (
+            <>
+              <p>Unable to load rhyme suggestions</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Please check your internet connection
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                No {activeTab} rhymes found for "{word}"
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Try a different word or check spelling
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
@@ -122,4 +180,3 @@ export default function RhymeSuggestionPanel({ word, onSelect, onClose }: RhymeS
     </div>
   );
 }
-

@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useSongStore } from '../../store/songStore';
-import { CheckCircle2, AlertCircle, Download, Share2, FileText, Music2, Layers } from 'lucide-react';
+import { useToastStore } from '../../store/toastStore';
+import { CheckCircle2, AlertCircle, Download, Share2, FileText, Music2, Layers, FileMusic } from 'lucide-react';
+import { exportSong } from '../../lib/export';
 
 export default function MixDashboard() {
   const { currentSong } = useSongStore();
-  const [exportFormat, setExportFormat] = useState<'lyrics' | 'structure' | 'json' | null>(null);
+  const { showError, showSuccess } = useToastStore();
+  const [exportFormat, setExportFormat] = useState<'lyrics' | 'structure' | 'chordchart' | 'json' | null>(null);
 
   if (!currentSong) {
     return (
@@ -65,48 +68,23 @@ export default function MixDashboard() {
     (completionChecklist.filter((item) => item.checked).length / completionChecklist.length) * 100
   );
 
-  const handleExport = (format: 'lyrics' | 'structure' | 'json') => {
-    setExportFormat(format);
-
-    if (format === 'lyrics') {
-      const lyrics = currentSong.sections
-        .map((section) => {
-          const header = `[${section.type.toUpperCase()}]`;
-          return `${header}\n${section.lyrics || '(no lyrics)'}\n`;
-        })
-        .join('\n');
-
-      const blob = new Blob([lyrics], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${currentSong.title.replace(/\s+/g, '_')}_lyrics.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } else if (format === 'structure') {
-      const structure = currentSong.sections
-        .map((section, index) => `${index + 1}. ${section.type.toUpperCase()} - ${section.duration || 8} bars`)
-        .join('\n');
-
-      const blob = new Blob([structure], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${currentSong.title.replace(/\s+/g, '_')}_structure.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } else if (format === 'json') {
-      const json = JSON.stringify(currentSong, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${currentSong.title.replace(/\s+/g, '_')}_complete.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+  const handleExport = (format: 'lyrics' | 'structure' | 'chordchart' | 'json') => {
+    if (!currentSong) return;
+    
+    try {
+      setExportFormat(format);
+      exportSong(currentSong, format);
+      showSuccess(`Song exported as ${format === 'chordchart' ? 'Chord Chart' : format.toUpperCase()}`);
+      
+      // Reset format after a short delay to show feedback
+      setTimeout(() => {
+        setExportFormat(null);
+      }, 500);
+    } catch (error) {
+      console.error('Export error:', error);
+      showError('Failed to export song. Please try again.');
+      setExportFormat(null);
     }
-
-    setExportFormat(null);
   };
 
   return (
@@ -203,7 +181,7 @@ export default function MixDashboard() {
           <Download size={20} />
           Export Options
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <button
             onClick={() => handleExport('lyrics')}
             disabled={exportFormat === 'lyrics'}
@@ -211,7 +189,7 @@ export default function MixDashboard() {
           >
             <FileText className="text-accent mb-2" size={24} />
             <div className="font-semibold text-white mb-1">Export Lyrics</div>
-            <div className="text-xs text-gray-400">.txt format</div>
+            <div className="text-xs text-gray-400">Plain text format</div>
           </button>
 
           <button
@@ -221,7 +199,17 @@ export default function MixDashboard() {
           >
             <Layers className="text-accent mb-2" size={24} />
             <div className="font-semibold text-white mb-1">Export Structure</div>
-            <div className="text-xs text-gray-400">.txt format</div>
+            <div className="text-xs text-gray-400">Song structure info</div>
+          </button>
+
+          <button
+            onClick={() => handleExport('chordchart')}
+            disabled={exportFormat === 'chordchart'}
+            className="p-4 bg-dark-elevated rounded border border-gray-800 hover:border-accent transition-colors text-left disabled:opacity-50"
+          >
+            <FileMusic className="text-accent mb-2" size={24} />
+            <div className="font-semibold text-white mb-1">Chord Chart</div>
+            <div className="text-xs text-gray-400">Chords + Lyrics</div>
           </button>
 
           <button
@@ -231,7 +219,7 @@ export default function MixDashboard() {
           >
             <Music2 className="text-accent mb-2" size={24} />
             <div className="font-semibold text-white mb-1">Export Complete</div>
-            <div className="text-xs text-gray-400">.json format</div>
+            <div className="text-xs text-gray-400">Full JSON data</div>
           </button>
         </div>
       </div>

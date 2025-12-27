@@ -9,7 +9,7 @@ import { Play, RotateCw, Sparkles, ArrowLeftRight, X, TrendingUp } from 'lucide-
 import * as Tone from 'tone';
 
 export default function ProgressionBuilder() {
-  const { currentSong } = useSongStore();
+  const { currentSong, updateProgression } = useSongStore();
   const [selectedSchema, setSelectedSchema] = useState<string | null>(null);
   const [progression, setProgression] = useState<Chord[]>([]);
   const [selectedChordIndex, setSelectedChordIndex] = useState<number | null>(null);
@@ -33,6 +33,25 @@ export default function ProgressionBuilder() {
     }
   }, []);
 
+  // Load progression from song store when song changes
+  useEffect(() => {
+    if (currentSong?.progression && currentSong.progression.length > 0) {
+      setProgression(currentSong.progression);
+      // Try to detect which schema was used (optional enhancement)
+    } else {
+      setProgression([]);
+      setSelectedSchema(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSong?.id]); // Only depend on song ID to avoid loops
+
+  // Save progression to store (called explicitly from handlers)
+  const saveProgression = (newProgression: Chord[]) => {
+    if (newProgression.length > 0 && currentSong) {
+      updateProgression(newProgression);
+    }
+  };
+
   const handleSchemaSelect = (schemaName: string) => {
     const schema = chordSchemas.find((s) => s.name === schemaName);
     if (!schema || !currentSong) return;
@@ -45,6 +64,7 @@ export default function ProgressionBuilder() {
     setSelectedSchema(schemaName);
     setSelectedChordIndex(null);
     setSubstitutions(null);
+    saveProgression(chords);
   };
 
   const handleRotate = () => {
@@ -54,6 +74,7 @@ export default function ProgressionBuilder() {
     setProgression(rotated);
     setSelectedChordIndex(null);
     setSubstitutions(null);
+    saveProgression(rotated);
   };
 
   const handleChordClick = (index: number) => {
@@ -74,6 +95,7 @@ export default function ProgressionBuilder() {
     setProgression(newProgression);
     setSelectedChordIndex(null);
     setSubstitutions(null);
+    saveProgression(newProgression);
   };
 
   const handlePlay = async () => {

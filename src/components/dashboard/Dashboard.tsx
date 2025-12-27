@@ -3,11 +3,16 @@ import { Plus, Music, Calendar, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
-  const { songs, createNewSong } = useSongStore();
+  const { songs, createNewSong, loadSong } = useSongStore();
   const navigate = useNavigate();
 
   const handleNewSong = () => {
     createNewSong();
+    navigate('/harmony');
+  };
+
+  const handleSongClick = (songId: string) => {
+    loadSong(songId);
     navigate('/harmony');
   };
 
@@ -88,7 +93,7 @@ export default function Dashboard() {
               <div
                 key={song.id}
                 className="card-interactive p-4"
-                onClick={() => navigate('/harmony')}
+                onClick={() => handleSongClick(song.id)}
               >
                 <h3 className="font-semibold text-text-primary mb-2">{song.title}</h3>
                 <div className="flex items-center gap-4 text-xs text-text-tertiary">

@@ -90,6 +90,8 @@ export interface Song {
   tempo: number;
   /** Array of song sections */
   sections: SongSection[];
+  /** Optional: Main chord progression for the song */
+  progression?: Chord[];
   /** Creation timestamp */
   createdAt: Date;
   /** Last update timestamp */

@@ -5,24 +5,50 @@ A comprehensive songwriting productivity application based on the "How To Write 
 ## Features
 
 ### Phase 1: Core Architecture ✅
+
 - React + TypeScript + Vite setup
 - Zustand state management
 - Tailwind CSS with dark theme
 - Professional DAW-like interface
 
 ### Phase 2: Harmonic Engine ✅
+
 - **Key Selection**: Interactive circle of fifths key selector
 - **Chord Schema Database**: 8 common chord progressions (Doo-wop, Axis of Awesome, etc.)
 - **Chord Progression Builder**: Visual timeline with chord cards
 - **Music Theory Integration**: Automatic chord generation from roman numerals
 
-### Phase 3-11: Coming Soon
-- Song structure mapping with MAP templates
-- Lyric editor with multiple modes
-- Melody analyzer and recorder
-- Bridge builder and finishing tools
+### Phase 3: Song Structure ✅
+
+- **MAP Templates**: Multiple narrative structure templates (PEC, Journey, etc.)
+- **Structure Visualizer**: Visual timeline of song sections
+- **Narrative Prompter**: Guided prompts for each section's purpose
+- **Bridge Builder**: Intelligent bridge creation with chord substitution strategies
+
+### Phase 4: Lyrics ✅
+
+- **Multi-mode Editor**: Typewriter, Hemingway, Focus, and Normal editing modes
+- **Syllable Counter**: Real-time syllable analysis with rhythm matching
+- **Rhyme Analysis**: Visual rhyme detection and rhyme suggestion panel
+- **Section Management**: Add, delete, and reorder song sections
+
+### Phase 5: Melody ✅
+
+- **Melody View**: Melody analysis and recording interface
+
+### Phase 6: Finishing Tools ✅
+
+- **Finishing View**: Tools for polishing your song
+- **Mix Dashboard**: Production checklist and mixing guidance
+- **Ending Types**: Multiple song ending strategies
+
+### Coming Soon
+
+- Audio recording and playback (Tone.js integration)
 - AI writing assistant
-- Collaboration features
+- Real-time collaboration
+- Export functionality
+- Auto-save and cloud sync
 
 ## Tech Stack
 
@@ -30,8 +56,8 @@ A comprehensive songwriting productivity application based on the "How To Write 
 - **Vite** for build tooling
 - **Tailwind CSS** for styling
 - **Zustand** for state management
-- **Tone.js** for audio playback (to be integrated)
-- **react-beautiful-dnd** for drag-and-drop (to be integrated)
+- **Tone.js** for audio playback (installed, integration in progress)
+- **react-beautiful-dnd** for drag-and-drop (installed, integration in progress)
 - **Lucide React** for icons
 
 ## Getting Started
@@ -43,11 +69,13 @@ A comprehensive songwriting productivity application based on the "How To Write 
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -74,13 +102,15 @@ src/
 │   ├── melody/         # Melody tools and recorder
 │   ├── finishing/      # Mix and polish tools
 │   └── layout/         # App shell components
-├── hooks/              # Custom React hooks
 ├── lib/                # Utility functions and music theory
-│   └── harmony/        # Chord and key utilities
+│   ├── harmony/        # Chord and key utilities
+│   └── lyrics/         # Lyric analysis (syllable counting, rhyme detection)
 ├── types/              # TypeScript interfaces
-│   └── music.ts        # Core music types
+│   ├── music.ts        # Core music types
+│   └── structure.ts    # Song structure types
 ├── data/               # Reference data
-│   └── chordSchemas.ts # Chord progression templates
+│   ├── chordSchemas.ts # Chord progression templates
+│   └── songMaps.ts     # MAP narrative structure templates
 └── store/              # Zustand stores
     └── songStore.ts    # Main song state management
 ```
@@ -88,16 +118,20 @@ src/
 ## Development Roadmap
 
 ### MVP Features (Priority)
+
 - [x] Project setup and core architecture
 - [x] Key selection component
 - [x] Chord progression builder with schemas
-- [ ] Song structure visualizer with MAP templates
-- [ ] Basic lyric editor with syllable counting
-- [ ] Section management (add/delete/reorder)
-- [ ] Export lyrics and structure
-- [ ] Auto-save functionality
+- [x] Song structure visualizer with MAP templates
+- [x] Basic lyric editor with syllable counting
+- [x] Section management (add/delete/reorder)
+- [x] Bridge builder with chord substitution strategies
+- [x] Finishing tools and mix dashboard
+- [x] Export lyrics and structure
+- [x] Auto-save functionality
 
 ### V2 Features
+
 - [ ] Audio recording and playback
 - [ ] AI lyric generation
 - [ ] Real-time collaboration
@@ -115,4 +149,3 @@ MIT
 ## Acknowledgments
 
 Based on the "How To Write Songs" (HTWS) methodology and songwriting best practices.
-
