@@ -14,9 +14,10 @@ A comprehensive songwriting productivity application based on the "How To Write 
 ### Phase 2: Harmonic Engine ✅
 
 - **Key Selection**: Interactive circle of fifths key selector
-- **Chord Schema Database**: 8 common chord progressions (Doo-wop, Axis of Awesome, etc.)
+- **Chord Schema Database**: Expanded library of chord progressions (Doo-wop, Axis of Awesome, and more)
 - **Chord Progression Builder**: Visual timeline with chord cards
 - **Music Theory Integration**: Automatic chord generation from roman numerals
+- **Audio Playback**: Play chord progressions with Tone.js integration
 
 ### Phase 3: Song Structure ✅
 
@@ -41,14 +42,24 @@ A comprehensive songwriting productivity application based on the "How To Write 
 - **Finishing View**: Tools for polishing your song
 - **Mix Dashboard**: Production checklist and mixing guidance
 - **Ending Types**: Multiple song ending strategies
+- **Export Options**: Export lyrics, structure, chord charts, and complete JSON
+- **Auto-Save**: Automatic saving with debouncing (saves 1.5 seconds after changes)
+
+### Additional Features ✅
+
+- **Settings Page**: Data management, export options, and app information
+- **Error Handling**: Comprehensive error boundaries and user-friendly notifications
+- **Keyboard Shortcuts**: Ctrl+S (save), Ctrl+Z (undo), Ctrl+Shift+Z (redo), Space (play/pause)
+- **Undo/Redo**: Full history management for song edits
+- **Drag & Drop**: Reorder song sections with react-beautiful-dnd
 
 ### Coming Soon
 
-- Audio recording and playback (Tone.js integration)
+- Audio recording (melody/vocal recording interface)
+- Virtual keyboard with audio playback
 - AI writing assistant
 - Real-time collaboration
-- Export functionality
-- Auto-save and cloud sync
+- Cloud sync
 
 ## Tech Stack
 
@@ -56,8 +67,8 @@ A comprehensive songwriting productivity application based on the "How To Write 
 - **Vite** for build tooling
 - **Tailwind CSS** for styling
 - **Zustand** for state management
-- **Tone.js** for audio playback (installed, integration in progress)
-- **react-beautiful-dnd** for drag-and-drop (installed, integration in progress)
+- **Tone.js** for audio playback (integrated)
+- **react-beautiful-dnd** for drag-and-drop (integrated in structure visualizer)
 - **Lucide React** for icons
 
 ## Getting Started
@@ -80,7 +91,7 @@ npm install
 npm run dev
 ```
 
-3. Open your browser to `http://localhost:3000`
+3. Open your browser to the URL shown in the terminal (typically `http://localhost:5173`)
 
 ### Build for Production
 
@@ -95,16 +106,20 @@ The built files will be in the `dist` directory.
 ```
 src/
 ├── components/          # React components
+│   ├── common/         # Shared components (ErrorBoundary, Toast)
 │   ├── dashboard/      # Dashboard and project management
 │   ├── harmony/        # Key selection and chord progression
 │   ├── structure/      # Song structure visualizer
 │   ├── lyrics/         # Lyric editor and analysis
 │   ├── melody/         # Melody tools and recorder
 │   ├── finishing/      # Mix and polish tools
+│   ├── settings/       # Settings page
 │   └── layout/         # App shell components
 ├── lib/                # Utility functions and music theory
 │   ├── harmony/        # Chord and key utilities
-│   └── lyrics/         # Lyric analysis (syllable counting, rhyme detection)
+│   ├── lyrics/         # Lyric analysis (syllable counting, rhyme detection)
+│   ├── export.ts       # Export utilities
+│   └── errors.ts       # Error handling utilities
 ├── types/              # TypeScript interfaces
 │   ├── music.ts        # Core music types
 │   └── structure.ts    # Song structure types
@@ -112,27 +127,33 @@ src/
 │   ├── chordSchemas.ts # Chord progression templates
 │   └── songMaps.ts     # MAP narrative structure templates
 └── store/              # Zustand stores
-    └── songStore.ts    # Main song state management
+    ├── songStore.ts    # Main song state management
+    └── toastStore.ts   # Toast notification state
 ```
 
 ## Development Roadmap
 
-### MVP Features (Priority)
+### MVP Features (Completed) ✅
 
 - [x] Project setup and core architecture
 - [x] Key selection component
 - [x] Chord progression builder with schemas
 - [x] Song structure visualizer with MAP templates
 - [x] Basic lyric editor with syllable counting
-- [x] Section management (add/delete/reorder)
+- [x] Section management (add/delete/reorder with drag-and-drop)
 - [x] Bridge builder with chord substitution strategies
 - [x] Finishing tools and mix dashboard
-- [x] Export lyrics and structure
+- [x] Export functionality (lyrics, structure, chord charts, JSON)
 - [x] Auto-save functionality
+- [x] Settings page
+- [x] Error handling and user notifications
+- [x] Keyboard shortcuts (save, undo, redo, play/pause)
+- [x] Audio playback for chord progressions
 
-### V2 Features
+### V2 Features (Future)
 
-- [ ] Audio recording and playback
+- [ ] Audio recording (melody/vocal recording)
+- [ ] Virtual keyboard with audio playback
 - [ ] AI lyric generation
 - [ ] Real-time collaboration
 - [ ] Advanced NLP analysis

@@ -12,6 +12,7 @@ import StructureView from "./components/structure/StructureView";
 import LyricsView from "./components/lyrics/LyricsView";
 import MelodyView from "./components/melody/MelodyView";
 import FinishingView from "./components/finishing/FinishingView";
+import SettingsView from "./components/settings/SettingsView";
 import Sidebar from "./components/layout/Sidebar";
 import TopBar from "./components/layout/TopBar";
 import PlayerBar from "./components/layout/PlayerBar";
@@ -75,6 +76,7 @@ function App() {
                   <Route path="/lyrics" element={<ErrorBoundary><LyricsView /></ErrorBoundary>} />
                   <Route path="/melody" element={<ErrorBoundary><MelodyView /></ErrorBoundary>} />
                   <Route path="/finishing" element={<ErrorBoundary><FinishingView /></ErrorBoundary>} />
+                  <Route path="/settings" element={<ErrorBoundary><SettingsView /></ErrorBoundary>} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </ErrorBoundary>
