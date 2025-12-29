@@ -7,11 +7,16 @@ import { Key, Chord } from '../../types/music';
 const CHROMATIC_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const FLAT_NOTES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
-const MAJOR_SCALE_DEGREES = [0, 2, 4, 5, 7, 9, 11]; // C, D, E, F, G, A, B
-const MINOR_SCALE_DEGREES = [0, 2, 3, 5, 7, 8, 10]; // C, D, Eb, F, G, Ab, Bb
+// Scale degrees for different modes (relative to major scale starting on each degree)
+const MAJOR_SCALE_DEGREES = [0, 2, 4, 5, 7, 9, 11]; // Ionian (major): C, D, E, F, G, A, B
+const MINOR_SCALE_DEGREES = [0, 2, 3, 5, 7, 8, 10]; // Aeolian (natural minor): C, D, Eb, F, G, Ab, Bb
+const DORIAN_SCALE_DEGREES = [0, 2, 3, 5, 7, 9, 10]; // Dorian: C, D, Eb, F, G, A, Bb
+const PHRYGIAN_SCALE_DEGREES = [0, 1, 3, 5, 7, 8, 10]; // Phrygian: C, Db, Eb, F, G, Ab, Bb
+const LYDIAN_SCALE_DEGREES = [0, 2, 4, 6, 7, 9, 11]; // Lydian: C, D, E, F#, G, A, B
+const MIXOLYDIAN_SCALE_DEGREES = [0, 2, 4, 5, 7, 9, 10]; // Mixolydian: C, D, E, F, G, A, Bb
+const LOCRIAN_SCALE_DEGREES = [0, 1, 3, 5, 6, 8, 10]; // Locrian: C, Db, Eb, F, Gb, Ab, Bb
 
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
-const ROMAN_NUMERALS_MINOR = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii'];
 
 /**
  * Get the note name in the preferred format (sharp or flat)
@@ -59,7 +64,33 @@ export function notesEqual(note1: string, note2: string): boolean {
  */
 export function getScaleDegrees(key: Key): number[] {
   const rootIndex = getNoteIndex(key.root);
-  const scalePattern = key.mode === 'major' ? MAJOR_SCALE_DEGREES : MINOR_SCALE_DEGREES;
+  let scalePattern: number[];
+  
+  switch (key.mode) {
+    case 'major':
+      scalePattern = MAJOR_SCALE_DEGREES;
+      break;
+    case 'minor':
+      scalePattern = MINOR_SCALE_DEGREES;
+      break;
+    case 'dorian':
+      scalePattern = DORIAN_SCALE_DEGREES;
+      break;
+    case 'phrygian':
+      scalePattern = PHRYGIAN_SCALE_DEGREES;
+      break;
+    case 'lydian':
+      scalePattern = LYDIAN_SCALE_DEGREES;
+      break;
+    case 'mixolydian':
+      scalePattern = MIXOLYDIAN_SCALE_DEGREES;
+      break;
+    case 'locrian':
+      scalePattern = LOCRIAN_SCALE_DEGREES;
+      break;
+    default:
+      scalePattern = MAJOR_SCALE_DEGREES;
+  }
   
   return scalePattern.map((degree) => (rootIndex + degree) % 12);
 }
@@ -76,92 +107,87 @@ export function getScaleNotes(key: Key): string[] {
  * Convert a roman numeral to a chord in the given key
  */
 export function romanNumeralToChord(romanNumeral: string, key: Key): Chord {
-  const isMinor = romanNumeral === romanNumeral.toLowerCase();
-  const numeralIndex = ROMAN_NUMERALS.indexOf(romanNumeral.toUpperCase());
+  // Check for flat notation (e.g., "bVII", "bIII")
+  const hasFlat = romanNumeral.toLowerCase().startsWith('b');
+  const baseNumeralStr = hasFlat ? romanNumeral.slice(1) : romanNumeral;
+  
+  // Remove extensions/suffixes to get the base numeral (e.g., "I7" -> "I", "vii°" -> "VII")
+  const cleanNumeral = baseNumeralStr.replace(/[°+7-9sus]/g, '').toUpperCase();
+  const numeralIndex = ROMAN_NUMERALS.indexOf(cleanNumeral);
   
   if (numeralIndex === -1) {
-    // Handle extended chords (e.g., "I7", "ii7")
-    const baseNumeral = romanNumeral.replace(/[°+7-9sus]/g, '').toUpperCase();
-    const baseIndex = ROMAN_NUMERALS.indexOf(baseNumeral);
-    if (baseIndex === -1) {
-      throw new Error(`Invalid roman numeral: ${romanNumeral}`);
-    }
-    // For now, return the base chord
-    return romanNumeralToChord(baseNumeral, key);
+    throw new Error(`Invalid roman numeral: ${romanNumeral}`);
   }
   
   const scaleDegrees = getScaleDegrees(key);
-  const rootNoteIndex = scaleDegrees[numeralIndex];
-  const rootNote = CHROMATIC_NOTES[rootNoteIndex];
+  let rootNoteIndex: number;
   
-  // Determine chord quality
-  let quality = 'major';
-  let notes: string[] = [];
-  
-  if (key.mode === 'major') {
-    if (numeralIndex === 0 || numeralIndex === 3 || numeralIndex === 4) {
-      quality = 'major';
-      // Major triad: root, major third, perfect fifth
-      notes = [
-        CHROMATIC_NOTES[rootNoteIndex],
-        CHROMATIC_NOTES[(rootNoteIndex + 4) % 12],
-        CHROMATIC_NOTES[(rootNoteIndex + 7) % 12],
-      ];
-    } else if (numeralIndex === 1 || numeralIndex === 2 || numeralIndex === 5) {
-      quality = 'minor';
-      // Minor triad: root, minor third, perfect fifth
-      notes = [
-        CHROMATIC_NOTES[rootNoteIndex],
-        CHROMATIC_NOTES[(rootNoteIndex + 3) % 12],
-        CHROMATIC_NOTES[(rootNoteIndex + 7) % 12],
-      ];
-    } else if (numeralIndex === 6) {
-      quality = 'diminished';
-      // Diminished triad: root, minor third, diminished fifth
-      notes = [
-        CHROMATIC_NOTES[rootNoteIndex],
-        CHROMATIC_NOTES[(rootNoteIndex + 3) % 12],
-        CHROMATIC_NOTES[(rootNoteIndex + 6) % 12],
-      ];
-    }
+  if (hasFlat) {
+    // For flat notation (e.g., "bVII"), take the normal scale degree and flatten by one semitone
+    // In C major, VII = B, so bVII = Bb
+    const normalNoteIndex = scaleDegrees[numeralIndex];
+    rootNoteIndex = (normalNoteIndex - 1 + 12) % 12;
   } else {
-    // Minor key
-    if (numeralIndex === 0 || numeralIndex === 3 || numeralIndex === 4) {
-      quality = 'minor';
-      notes = [
-        CHROMATIC_NOTES[rootNoteIndex],
-        CHROMATIC_NOTES[(rootNoteIndex + 3) % 12],
-        CHROMATIC_NOTES[(rootNoteIndex + 7) % 12],
-      ];
-    } else if (numeralIndex === 2 || numeralIndex === 5 || numeralIndex === 6) {
-      quality = 'major';
-      notes = [
-        CHROMATIC_NOTES[rootNoteIndex],
-        CHROMATIC_NOTES[(rootNoteIndex + 4) % 12],
-        CHROMATIC_NOTES[(rootNoteIndex + 7) % 12],
-      ];
-    }
+    rootNoteIndex = scaleDegrees[numeralIndex];
   }
   
-  // Determine function based on key mode
-  let chordFunction: 'tonic' | 'subdominant' | 'dominant' = 'tonic';
-  if (key.mode === 'major') {
-    if (numeralIndex === 0 || numeralIndex === 3 || numeralIndex === 6) {
-      chordFunction = 'tonic';
-    } else if (numeralIndex === 1 || numeralIndex === 4) {
-      chordFunction = 'subdominant';
-    } else if (numeralIndex === 2 || numeralIndex === 5) {
-      chordFunction = 'dominant';
-    }
+  const rootNote = CHROMATIC_NOTES[rootNoteIndex];
+  
+  // Get the third and fifth scale degrees relative to the root
+  // For flat chords, use major quality intervals from the flattened root
+  let thirdNoteIndex: number;
+  let fifthNoteIndex: number;
+  
+  if (hasFlat) {
+    // For flat chords (borrowed chords), use major intervals from the flattened root
+    // Major third = +4 semitones, Perfect fifth = +7 semitones
+    thirdNoteIndex = (rootNoteIndex + 4) % 12;
+    fifthNoteIndex = (rootNoteIndex + 7) % 12;
   } else {
-    // Minor key functions
-    if (numeralIndex === 0 || numeralIndex === 3) {
-      chordFunction = 'tonic';
-    } else if (numeralIndex === 1 || numeralIndex === 4 || numeralIndex === 6) {
-      chordFunction = 'subdominant';
-    } else if (numeralIndex === 2 || numeralIndex === 5) {
-      chordFunction = 'dominant';
-    }
+    // For diatonic chords, use the scale degrees
+    const thirdDegreeIndex = (numeralIndex + 2) % 7;
+    const fifthDegreeIndex = (numeralIndex + 4) % 7;
+    thirdNoteIndex = scaleDegrees[thirdDegreeIndex];
+    fifthNoteIndex = scaleDegrees[fifthDegreeIndex];
+  }
+  
+  // Calculate intervals in semitones from root
+  const thirdIntervalSemitones = (thirdNoteIndex - rootNoteIndex + 12) % 12;
+  const fifthIntervalSemitones = (fifthNoteIndex - rootNoteIndex + 12) % 12;
+  
+  // Determine chord quality based on intervals
+  let quality = 'major';
+  if (hasFlat) {
+    // Flat chords are typically major (borrowed from parallel key)
+    quality = 'major';
+  } else if (thirdIntervalSemitones === 4 && fifthIntervalSemitones === 7) {
+    quality = 'major';
+  } else if (thirdIntervalSemitones === 3 && fifthIntervalSemitones === 7) {
+    quality = 'minor';
+  } else if (thirdIntervalSemitones === 3 && fifthIntervalSemitones === 6) {
+    quality = 'diminished';
+  } else if (thirdIntervalSemitones === 4 && fifthIntervalSemitones === 8) {
+    quality = 'augmented';
+  }
+  
+  // Build the chord notes using the calculated intervals
+  const notes = [
+    CHROMATIC_NOTES[rootNoteIndex],
+    CHROMATIC_NOTES[thirdNoteIndex],
+    CHROMATIC_NOTES[fifthNoteIndex],
+  ];
+  
+  // Determine function based on key mode (simplified - can be enhanced)
+  let chordFunction: 'tonic' | 'subdominant' | 'dominant' = 'tonic';
+  if (numeralIndex === 0) {
+    chordFunction = 'tonic';
+  } else if (numeralIndex === 1 || numeralIndex === 4) {
+    chordFunction = 'subdominant';
+  } else if (numeralIndex === 2 || numeralIndex === 5) {
+    chordFunction = 'dominant';
+  } else if (numeralIndex === 3 || numeralIndex === 6) {
+    // IV and vii° typically function as subdominant/dominant depending on context
+    chordFunction = numeralIndex === 3 ? 'subdominant' : 'dominant';
   }
   
   return {

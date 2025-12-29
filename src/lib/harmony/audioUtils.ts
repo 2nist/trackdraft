@@ -61,7 +61,7 @@ export async function playChord(
  */
 export async function playProgression(
   synth: Tone.PolySynth,
-  chords: Array<{ notes: string[] }>,
+  chords: Array<{ notes: string[]; beats?: number }>,
   chordDuration: string = '2n',
   tempo: number = 120
 ): Promise<void> {
@@ -73,11 +73,33 @@ export async function playProgression(
   // Set tempo
   Tone.Transport.bpm.value = tempo;
 
+  // Calculate cumulative time for each chord based on beats
+  let cumulativeTime = 0;
+  
   // Schedule each chord
-  chords.forEach((chord, index) => {
-    const time = `+${index * 2}`; // Each chord plays 2 beats apart
+  chords.forEach((chord) => {
+    const beats = chord.beats || 2; // Default to 2 beats if not specified
+    
+    // Convert beats to Tone.js duration notation
+    // 1 beat = '4n' (quarter note), 2 beats = '2n' (half note), 4 beats = '1n' (whole note)
+    let duration: string;
+    if (beats === 1) {
+      duration = '4n';
+    } else if (beats === 2) {
+      duration = '2n';
+    } else if (beats === 4) {
+      duration = '1n';
+    } else {
+      // For other values, use quarter note multiples
+      duration = `${beats * 4}n`;
+    }
+    
+    const time = `+${cumulativeTime}`;
     const frequencies = chord.notes.map((note) => noteToFrequency(note));
-    synth.triggerAttackRelease(frequencies, chordDuration, time);
+    synth.triggerAttackRelease(frequencies, duration, time);
+    
+    // Increment time by beats (each beat is a quarter note in Tone.js)
+    cumulativeTime += beats;
   });
 }
 

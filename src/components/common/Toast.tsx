@@ -44,7 +44,7 @@ function ToastItem({ toast, onRemove }: ToastProps) {
   const colors = {
     success: 'bg-green-500/20 border-green-500/50 text-green-400',
     error: 'bg-red-500/20 border-red-500/50 text-red-400',
-    info: 'bg-blue-500/20 border-blue-500/50 text-blue-400',
+    info: 'bg-black/20 border-black/50 text-white',
     warning: 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400',
   };
 

@@ -8,8 +8,8 @@
 export interface Key {
   /** The root note of the key (e.g., "C", "D", "F#") */
   root: string;
-  /** The mode of the key - major or minor */
-  mode: "major" | "minor";
+  /** The mode of the key */
+  mode: "major" | "minor" | "dorian" | "phrygian" | "lydian" | "mixolydian" | "locrian";
 }
 
 /**
@@ -26,6 +26,8 @@ export interface Chord {
   function: "tonic" | "subdominant" | "dominant";
   /** Optional: actual chord name (e.g., "C Major", "Am") */
   name?: string;
+  /** Optional: number of beats this chord lasts (default: 2) */
+  beats?: number;
 }
 
 /**

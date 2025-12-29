@@ -31,7 +31,7 @@ export default function Sidebar() {
             className="h-10 w-auto"
           />
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-br from-draft-blue-700 to-track-orange-700 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-br from-black to-track-orange-700 bg-clip-text text-transparent">
               TRACKdrafT
             </h1>
             <p className="text-xs text-text-tertiary mt-1">Draft Your Next Hit</p>
@@ -51,7 +51,7 @@ export default function Sidebar() {
                   to={item.path}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
         isActive
-          ? 'bg-gradient-to-br from-draft-blue-700 to-track-orange-700 text-white'
+          ? 'bg-gradient-to-br from-black to-track-orange-700 text-white'
           : 'text-text-secondary hover:bg-surface-2 hover:text-text-primary'
       }`}
                 >

@@ -62,7 +62,7 @@ export default function Dashboard() {
                 }).length}
               </p>
             </div>
-            <Calendar className="text-blue-500" size={32} />
+            <Calendar className="text-white" size={32} />
           </div>
         </div>
       </div>

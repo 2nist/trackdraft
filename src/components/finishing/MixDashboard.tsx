@@ -148,7 +148,7 @@ export default function MixDashboard() {
                   <span className="text-xs text-white">-3dB</span>
                 </div>
                 <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500" style={{ width: '70%' }} />
+                  <div className="h-full bg-black" style={{ width: '70%' }} />
                 </div>
               </div>
               <div>

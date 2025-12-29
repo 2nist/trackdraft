@@ -38,7 +38,7 @@ export default {
 
         // Section Colors (song structure)
         section: {
-          verse: "#3B82F6",
+          verse: "#000000",
           chorus: "#FFD700",
           bridge: "#8B5CF6",
           intro: "#6B7280",

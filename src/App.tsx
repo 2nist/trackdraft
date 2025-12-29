@@ -59,7 +59,7 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
-        <div className="flex h-screen bg-surface-0 text-text-primary overflow-hidden">
+        <div className="flex h-screen bg-black text-text-primary overflow-hidden">
           <ErrorBoundary>
             <Sidebar />
           </ErrorBoundary>
@@ -67,7 +67,7 @@ function App() {
             <ErrorBoundary>
               <TopBar />
             </ErrorBoundary>
-            <main className="flex-1 overflow-y-auto p-6">
+            <main className="flex-1 overflow-y-auto p-6 bg-black">
               <ErrorBoundary>
                 <Routes>
                   <Route path="/" element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />

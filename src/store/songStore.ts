@@ -33,6 +33,7 @@ const createDefaultSong = (title: string = "Untitled Song"): Song => ({
   key: { root: "C", mode: "major" },
   tempo: 120,
   sections: [],
+  progression: undefined,
   createdAt: new Date(),
   updatedAt: new Date(),
 });

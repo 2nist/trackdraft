@@ -8,8 +8,8 @@
     margin: 0;
     padding: 0;
     overflow-x: hidden;
-    background-color: #0F172A; /* surface-0 */
-    color: #F8FAFC; /* text-primary */
+    background-color: #000000; /* black background */
+    color: #FFFFFF; /* white text */
   }
 
   #root {
@@ -20,7 +20,7 @@
 @layer components {
   /* Primary Button - Brand gradient */
   .btn-primary {
-    background: linear-gradient(to bottom right, #1E3A5F, #FF6B35);
+    background: linear-gradient(to bottom right, #000000, #FF6B35);
     @apply text-white
            px-6 py-3
            rounded-lg
@@ -76,20 +76,19 @@
   /* Default Card */
   .card {
     @apply rounded-xl p-6;
-    background-color: #1E293B; /* surface-1 */
-    border: 1px solid #334155; /* surface-2 */
+    background-color: #000000; /* black */
+    border: none; /* no outlines */
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
   }
 
   /* Song Card (interactive) */
   .card-interactive {
     @apply rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer;
-    background: linear-gradient(to bottom right, #1E293B, #334155);
-    border: 1px solid #475569; /* surface-3 */
+    background-color: #000000; /* black */
+    border: none; /* no outlines */
   }
   
   .card-interactive:hover {
-    border-color: #FF6B35; /* track-orange-700 */
     transform: translateY(-4px);
     box-shadow: 0 10px 15px -3px rgba(255, 107, 53, 0.2);
   }
@@ -97,8 +96,8 @@
   /* Elevated Card (modals) */
   .card-elevated {
     @apply rounded-xl p-6;
-    background-color: #1E293B; /* surface-1 */
-    border: 1px solid #475569; /* surface-3 */
+    background-color: #000000; /* black */
+    border: none; /* no outlines */
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
   }
 }
