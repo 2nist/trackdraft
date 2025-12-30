@@ -4,6 +4,7 @@ import { Save, Undo2, Redo2, Play, Pause } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { playProgression } from '../../lib/harmony/audioUtils';
 import * as Tone from 'tone';
+import BridgeStatus from '../BridgeStatus/BridgeStatus';
 
 export default function TopBar() {
   const { currentSong, updateSong, saveSong, undo, redo, canUndo, canRedo } = useSongStore();
@@ -216,6 +217,7 @@ export default function TopBar() {
           <span className="px-2 py-1 bg-surface-2 rounded border border-surface-3">
             {currentSong?.tempo} BPM
           </span>
+          <BridgeStatus />
         </div>
       </div>
 

@@ -3,11 +3,13 @@ import { useSongStore } from '../../store/songStore';
 import { Settings, Trash2, Download, Upload, Save } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
 import { exportSong } from '../../lib/export';
+import ImportDialog from '../common/ImportDialog';
 
 export default function SettingsView() {
   const { songs, currentSong } = useSongStore();
   const { showSuccess, showError, showWarning } = useToastStore();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   const handleExportAll = () => {
     if (songs.length === 0) {
@@ -69,6 +71,24 @@ export default function SettingsView() {
           <h2 className="text-xl font-semibold text-white mb-4">Data Management</h2>
           
           <div className="space-y-4">
+            <div className="p-4 bg-dark-elevated rounded border border-gray-800">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="font-semibold text-white mb-1">Import Project</h3>
+                  <p className="text-sm text-gray-400">
+                    Import songs from JAMS, JCRD, or McGill Billboard / SALAMI formats
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowImportDialog(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center gap-2"
+                >
+                  <Upload size={18} />
+                  Import
+                </button>
+              </div>
+            </div>
+
             <div className="p-4 bg-dark-elevated rounded border border-gray-800">
               <div className="flex items-center justify-between mb-2">
                 <div>
@@ -220,6 +240,10 @@ export default function SettingsView() {
           </div>
         </div>
       </div>
+
+      {showImportDialog && (
+        <ImportDialog onClose={() => setShowImportDialog(false)} />
+      )}
     </div>
   );
 }

@@ -9,11 +9,14 @@ import {
   SubstitutionOption,
 } from "../../lib/harmony/substitutions";
 import { Chord } from "../../types/music";
-import { Plus, ChevronDown, Save, X, Trash2 } from "lucide-react";
+import { Plus, ChevronDown, Save, X, Trash2, Play } from "lucide-react";
 import CircularProgressionView from "./CircularProgressionView";
 import ChordEditorToolbar from "./ChordEditorToolbar";
 import { EnhancedProgressionCard } from "./EnhancedProgressionCard";
 import { useToastStore } from "../../store/toastStore";
+import { reaperBridge } from "../../lib/reaper-bridge";
+import { useReaperConnection } from "../../hooks/useReaperConnection";
+import { useProgressionStore } from "../../store/progressionStore";
 
 export default function EnhancedProgressionBuilder() {
   const { currentSong, updateProgression, updateTempo, updateKey } =
@@ -26,8 +29,12 @@ export default function EnhancedProgressionBuilder() {
     convertProgressionToSchema,
   } = useSchemaStore();
   const { showSuccess, showError } = useToastStore();
+  const { connected } = useReaperConnection();
+  const { saveProgression: saveNamedProgression, loadProgressions } =
+    useProgressionStore();
   const [selectedSchema, setSelectedSchema] = useState<string | null>(null);
   const [progression, setProgression] = useState<Chord[]>([]);
+  const [sending, setSending] = useState(false);
   const [selectedChordIndex, setSelectedChordIndex] = useState<number | null>(
     null
   );
@@ -42,11 +49,19 @@ export default function EnhancedProgressionBuilder() {
   const [showSchemasDropdown, setShowSchemasDropdown] = useState(false);
   const [showSaveSchemaModal, setShowSaveSchemaModal] = useState(false);
   const [schemaName, setSchemaName] = useState("");
+  const [showLabelProgressionModal, setShowLabelProgressionModal] =
+    useState(false);
+  const [progressionName, setProgressionName] = useState("");
 
   // Load custom schemas on mount
   useEffect(() => {
     loadCustomSchemas();
   }, [loadCustomSchemas]);
+
+  // Load progressions on mount
+  useEffect(() => {
+    loadProgressions();
+  }, [loadProgressions]);
 
   // Merge built-in and custom schemas
   const allSchemas = [...chordSchemas, ...customSchemas];
@@ -255,6 +270,26 @@ export default function EnhancedProgressionBuilder() {
     saveProgression(newProgression);
   };
 
+  const handleSaveLabeledProgression = () => {
+    if (!progressionName.trim() || !currentSong || progression.length === 0) {
+      return;
+    }
+
+    const namedProgression = {
+      id: crypto.randomUUID(),
+      name: progressionName.trim(),
+      progression: [...progression],
+      key: currentSong.key,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveNamedProgression(namedProgression);
+    showSuccess(`Progression "${progressionName.trim()}" saved!`);
+    setShowLabelProgressionModal(false);
+    setProgressionName("");
+  };
+
   const handleSaveSchema = () => {
     if (!schemaName.trim()) {
       showError("Please enter a name for the schema");
@@ -294,6 +329,46 @@ export default function EnhancedProgressionBuilder() {
         setSelectedSchema(null);
       }
       showSuccess(`Schema "${schemaName}" deleted`);
+    }
+  };
+
+  const handleSendToReaper = async () => {
+    if (!connected) {
+      showError(
+        "Please connect to Reaper first. Make sure Reaper is running and the bridge script is loaded."
+      );
+      return;
+    }
+
+    if (!currentSong) {
+      showError("No song loaded");
+      return;
+    }
+
+    if (progression.length === 0) {
+      showError("No progression to send. Create a progression first.");
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      const result = await reaperBridge.createChordTrack(currentSong);
+
+      if (result.success) {
+        showSuccess("✅ Chord track created in Reaper!");
+      } else {
+        showError(`❌ Error: ${result.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("Failed to send to Reaper:", error);
+      showError(
+        `❌ Failed to send: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
+    } finally {
+      setSending(false);
     }
   };
 
@@ -452,6 +527,19 @@ export default function EnhancedProgressionBuilder() {
               </div>
             )}
 
+            {/* Label Progression Button */}
+            {progression.length > 0 && (
+              <div className="pt-2">
+                <button
+                  onClick={() => setShowLabelProgressionModal(true)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 border-none rounded text-white text-xs font-medium transition-colors"
+                >
+                  <Save size={14} />
+                  Label & Save Progression
+                </button>
+              </div>
+            )}
+
             {/* Save as Schema Button */}
             {progression.length > 0 && (
               <div className="pt-2">
@@ -461,6 +549,34 @@ export default function EnhancedProgressionBuilder() {
                 >
                   <Save size={14} />
                   Save as Schema
+                </button>
+              </div>
+            )}
+
+            {/* Send to Reaper Button */}
+            {progression.length > 0 && (
+              <div className="pt-2">
+                <button
+                  onClick={handleSendToReaper}
+                  disabled={!connected || sending}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-black hover:bg-gray-900 border border-gray-700 hover:border-white rounded text-white text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={
+                    !connected
+                      ? "Connect to Reaper first"
+                      : "Send chord track to Reaper"
+                  }
+                >
+                  {sending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Play size={14} />
+                      Send to Reaper
+                    </>
+                  )}
                 </button>
               </div>
             )}
@@ -684,6 +800,78 @@ export default function EnhancedProgressionBuilder() {
           </div>
         </div>
       </div>
+
+      {/* Label Progression Modal */}
+      {showLabelProgressionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-black rounded-lg p-6 max-w-md w-full mx-4 border border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">
+                Label Progression
+              </h3>
+              <button
+                onClick={() => {
+                  setShowLabelProgressionModal(false);
+                  setProgressionName("");
+                }}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-white mb-2">
+                Progression Name
+              </label>
+              <input
+                type="text"
+                value={progressionName}
+                onChange={(e) => setProgressionName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && progressionName.trim()) {
+                    handleSaveLabeledProgression();
+                  } else if (e.key === "Escape") {
+                    setShowLabelProgressionModal(false);
+                    setProgressionName("");
+                  }
+                }}
+                placeholder="e.g., Verse Progression, Chorus, Bridge"
+                className="w-full px-3 py-2 bg-black border border-gray-700 rounded text-white focus:outline-none focus:border-accent"
+                autoFocus
+              />
+            </div>
+
+            <div className="mb-4">
+              <div className="text-sm text-gray-400 mb-2">
+                Current Progression:
+              </div>
+              <div className="text-sm text-white font-mono bg-black/50 p-2 rounded">
+                {progression.map((chord) => chord.romanNumeral).join(" - ")}
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowLabelProgressionModal(false);
+                  setProgressionName("");
+                }}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveLabeledProgression}
+                disabled={!progressionName.trim()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Save Schema Modal */}
       {showSaveSchemaModal && (
