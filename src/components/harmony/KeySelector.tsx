@@ -46,20 +46,20 @@ export default function KeySelector() {
       <div className="flex items-center justify-center gap-4">
         <button
           onClick={handleModeToggle}
-          className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+          className={`px-6 py-3 rounded-lg font-semibold transition-all border-2 ${
             currentKey.mode === 'major'
-              ? 'bg-accent text-white'
-              : 'bg-dark-elevated text-gray-400 hover:text-white'
+              ? 'border-accent bg-accent/10 text-white'
+              : 'border-gray-700 bg-transparent text-gray-400 hover:border-gray-600 hover:text-white hover:bg-gray-800/20'
           }`}
         >
           Major
         </button>
         <button
           onClick={handleModeToggle}
-          className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+          className={`px-6 py-3 rounded-lg font-semibold transition-all border-2 ${
             currentKey.mode === 'minor'
-              ? 'bg-accent text-white'
-              : 'bg-dark-elevated text-gray-400 hover:text-white'
+              ? 'border-accent bg-accent/10 text-white'
+              : 'border-gray-700 bg-transparent text-gray-400 hover:border-gray-600 hover:text-white hover:bg-gray-800/20'
           }`}
         >
           Minor
@@ -81,12 +81,12 @@ export default function KeySelector() {
               <button
                 key={note}
                 onClick={() => handleKeySelect(note)}
-                className={`absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full font-semibold transition-all ${
+                className={`absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full font-semibold transition-all border-2 bg-transparent ${
                   isSelected
-                    ? 'bg-gradient-to-br from-accent to-purple-600 text-white scale-110 shadow-lg shadow-accent/50'
+                    ? 'border-accent bg-accent/10 text-white scale-110 shadow-lg shadow-accent/50'
                     : isNatural
-                    ? 'bg-gray-700 text-white hover:bg-gray-600'
-                    : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
+                    ? 'border-gray-400 text-white hover:border-gray-300 hover:bg-gray-400/10'
+                    : 'border-gray-600 text-gray-300 hover:border-gray-500 hover:bg-gray-600/10'
                 }`}
                 style={{
                   left: `calc(50% + ${x}px)`,
@@ -108,10 +108,10 @@ export default function KeySelector() {
             {['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'].map((degree, index) => (
               <span
                 key={degree}
-                className={`px-2 py-1 rounded text-xs font-medium ${
+                className={`px-2 py-1 rounded text-xs font-medium border ${
                   index === 0
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-elevated text-gray-400'
+                    ? 'border-accent bg-accent/10 text-white'
+                    : 'border-gray-700 bg-transparent text-gray-400'
                 }`}
               >
                 {currentKey.mode === 'minor' && index === 0
@@ -129,7 +129,7 @@ export default function KeySelector() {
 
       {/* Selected Key Display */}
       <div className="text-center">
-        <div className="inline-block px-6 py-3 bg-gradient-to-r from-accent to-purple-600 rounded-lg">
+        <div className="inline-block px-6 py-3 border-2 border-accent bg-accent/10 rounded-lg">
           <p className="text-sm text-gray-300 mb-1">Selected Key</p>
           <p className="text-3xl font-bold text-white">
             {getDisplayNote(currentKey.root)} {currentKey.mode === 'major' ? 'Major' : 'Minor'}

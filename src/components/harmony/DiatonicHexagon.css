@@ -1,0 +1,71 @@
+.diatonic-hexagon-container {
+  position: absolute;
+  z-index: 20; /* Below key buttons (z-30) so keys remain clickable */
+  pointer-events: none; /* Container doesn't capture clicks */
+  width: 240px;
+  height: 240px;
+}
+
+.diatonic-hexagon-svg {
+  pointer-events: none; /* SVG background doesn't capture clicks */
+  /* Only individual hexagon polygons will have pointer-events */
+}
+
+.hex-chord {
+  transition: all 0.2s ease;
+}
+
+.hex-chord:hover {
+  fill: rgba(255, 255, 255, 0.15) !important;
+  stroke: rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.1);
+}
+
+.hex-key {
+  filter: drop-shadow(0 0 12px rgba(255, 107, 53, 0.6));
+  transition: all 0.2s ease;
+}
+
+.hex-key:hover {
+  fill: rgba(255, 107, 53, 0.35) !important;
+  stroke: #FF8555 !important;
+  filter: drop-shadow(0 0 16px rgba(255, 107, 53, 0.8));
+}
+
+.hex-key-text {
+  font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+  pointer-events: none;
+}
+
+.hex-key-name {
+  font-size: 16px;
+  font-weight: 800;
+  fill: #ffffff;
+}
+
+.hex-key-mode {
+  font-size: 9px;
+  font-weight: 600;
+  fill: #9ca3af;
+  text-transform: capitalize;
+}
+
+.hex-chord-text {
+  font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+}
+
+.hex-roman {
+  font-size: 8.5px;
+  font-weight: 700;
+  fill: #9ca3af;
+  letter-spacing: 0.2px;
+}
+
+.hex-label {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #ffffff;
+  letter-spacing: 0.2px;
+}

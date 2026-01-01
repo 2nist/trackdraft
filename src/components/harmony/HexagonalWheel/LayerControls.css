@@ -1,45 +1,42 @@
 .layer-controls {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
   margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(42, 42, 62, 0.6);
+  border-radius: 12px;
 }
 
 .layer-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
 }
 
 .layer-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 2px solid transparent;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
-  background: #2a2a3e;
-  color: white;
+  color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
-  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .layer-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.24);
 }
 
-.layer-button.active {
-  border-width: 3px;
+.layer-button.focused {
+  background: rgba(74, 144, 226, 0.2);
+  border-color: #4A90E2;
+  color: #fff;
   font-weight: 700;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.layer-label {
-  white-space: nowrap;
 }
 
 .dissonance-toggle {
@@ -50,9 +47,18 @@
   color: #ccc;
   font-size: 14px;
   cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.dissonance-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .dissonance-toggle input {
   cursor: pointer;
+  width: 18px;
+  height: 18px;
 }
 

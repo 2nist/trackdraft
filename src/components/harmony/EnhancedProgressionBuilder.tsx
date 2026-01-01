@@ -5,7 +5,6 @@ import { chordSchemas } from "../../data/chordSchemas";
 import { romanNumeralToChord } from "../../lib/harmony/keyUtils";
 import {
   getAllSubstitutions,
-  analyzeProgressionStrength,
   SubstitutionOption,
 } from "../../lib/harmony/substitutions";
 import { Chord } from "../../types/music";
@@ -13,6 +12,7 @@ import { Plus, ChevronDown, Save, X, Trash2, Play } from "lucide-react";
 import CircularProgressionView from "./CircularProgressionView";
 import ChordEditorToolbar from "./ChordEditorToolbar";
 import { EnhancedProgressionCard } from "./EnhancedProgressionCard";
+import { TheoryPanel } from "./TheoryPanel";
 import { useToastStore } from "../../store/toastStore";
 import { reaperBridge } from "../../lib/reaper-bridge";
 import { useReaperConnection } from "../../hooks/useReaperConnection";
@@ -259,6 +259,23 @@ export default function EnhancedProgressionBuilder() {
     setSubstitutions(subs);
   };
 
+  const handleChordModify = (index: number, modifiedChord: Chord) => {
+    if (!currentSong) return;
+
+    const newProgression = [...progression];
+    const beats = newProgression[index].beats || 2;
+    newProgression[index] = { ...modifiedChord, beats };
+    setProgression(newProgression);
+    saveProgression(newProgression);
+    
+    // Update substitutions for the modified chord
+    const subs = getAllSubstitutions(modifiedChord, currentSong.key);
+    setSubstitutions(subs);
+    
+    // Keep the same chord selected
+    setSelectedChordIndex(index);
+  };
+
   const handleSubstitute = (substitution: SubstitutionOption) => {
     if (selectedChordIndex === null) return;
 
@@ -268,6 +285,70 @@ export default function EnhancedProgressionBuilder() {
     setProgression(newProgression);
     setSubstitutions(getAllSubstitutions(substitution.chord, currentSong!.key));
     saveProgression(newProgression);
+  };
+
+  // Theory panel handlers
+  const handleExtend = (extendedChord: Chord) => {
+    if (selectedChordIndex === null || !currentSong) return;
+    const newProgression = [...progression];
+    const beats = newProgression[selectedChordIndex].beats || 2;
+    newProgression[selectedChordIndex] = { ...extendedChord, beats };
+    setProgression(newProgression);
+    saveProgression(newProgression);
+    showSuccess(`Extended to ${extendedChord.name}`);
+  };
+
+  const handleBorrow = (borrowedChord: Chord) => {
+    if (selectedChordIndex === null || !currentSong) return;
+    const newProgression = [...progression];
+    const beats = newProgression[selectedChordIndex].beats || 2;
+    newProgression[selectedChordIndex] = { ...borrowedChord, beats };
+    setProgression(newProgression);
+    saveProgression(newProgression);
+    showSuccess(`Borrowed ${borrowedChord.name}`);
+  };
+
+  const handleModulate = (newRoot: string) => {
+    if (!currentSong) return;
+    updateKey({
+      root: newRoot,
+      mode: currentSong.key.mode,
+    });
+    showSuccess(`Modulated to ${newRoot} ${currentSong.key.mode}`);
+  };
+
+  const handleTheorySubstitute = (subChord: Chord) => {
+    if (selectedChordIndex === null || !currentSong) return;
+    const newProgression = [...progression];
+    const beats = newProgression[selectedChordIndex].beats || 2;
+    newProgression[selectedChordIndex] = { ...subChord, beats };
+    setProgression(newProgression);
+    setSubstitutions(getAllSubstitutions(subChord, currentSong.key));
+    saveProgression(newProgression);
+    showSuccess(`Substituted with ${subChord.name}`);
+  };
+
+  const handleInsertProgression = (romanProgression: string[]) => {
+    if (!currentSong) return;
+    const newChords = romanProgression.map((rn) => {
+      const chord = romanNumeralToChord(rn, currentSong.key);
+      chord.beats = 2; // Default 2 beats per chord
+      return chord;
+    });
+    const newProgression = [...progression, ...newChords];
+    setProgression(newProgression);
+    saveProgression(newProgression);
+    showSuccess(`Inserted progression: ${romanProgression.join('-')}`);
+  };
+
+  const handleAddNextChord = (roman: string) => {
+    if (!currentSong) return;
+    const chord = romanNumeralToChord(roman, currentSong.key);
+    chord.beats = 2;
+    const newProgression = [...progression, chord];
+    setProgression(newProgression);
+    saveProgression(newProgression);
+    showSuccess(`Added ${chord.name}`);
   };
 
   const handleSaveLabeledProgression = () => {
@@ -356,14 +437,14 @@ export default function EnhancedProgressionBuilder() {
       const result = await reaperBridge.createChordTrack(currentSong);
 
       if (result.success) {
-        showSuccess("✅ Chord track created in Reaper!");
+        showSuccess("Chord track created in Reaper!");
       } else {
-        showError(`❌ Error: ${result.error || "Unknown error"}`);
+        showError(`Error: ${result.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Failed to send to Reaper:", error);
       showError(
-        `❌ Failed to send: ${
+        `Failed to send: ${
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
@@ -371,9 +452,6 @@ export default function EnhancedProgressionBuilder() {
       setSending(false);
     }
   };
-
-  const progressionStrength =
-    progression.length > 0 ? analyzeProgressionStrength(progression) : 0;
 
   if (!currentSong) {
     return (
@@ -498,32 +576,6 @@ export default function EnhancedProgressionBuilder() {
                   progression={progression}
                   songKey={currentSong.key}
                 />
-              </div>
-            )}
-
-            {/* Progression Strength */}
-            {progression.length > 0 && (
-              <div className="pt-2">
-                <div className="text-xs text-white mb-1.5">
-                  Progression Strength
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-black rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all ${
-                        progressionStrength >= 70
-                          ? "bg-green-500"
-                          : progressionStrength >= 50
-                          ? "bg-yellow-500"
-                          : "bg-red-500"
-                      }`}
-                      style={{ width: `${progressionStrength}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-semibold text-white min-w-[2.5rem] text-right">
-                    {progressionStrength}%
-                  </span>
-                </div>
               </div>
             )}
 
@@ -682,7 +734,7 @@ export default function EnhancedProgressionBuilder() {
         {/* Main Visualization */}
         <div className="lg:col-span-7 flex flex-col h-[calc(100vh-12rem)]">
           <div
-            className="card p-2 flex items-center justify-center"
+            className="card p-2 flex items-center justify-center relative"
             style={{ height: "100%" }}
           >
             <CircularProgressionView
@@ -692,13 +744,15 @@ export default function EnhancedProgressionBuilder() {
               onChordRemove={handleRemoveChord}
               onBeatsChange={handleBeatsChange}
               totalBeats={totalBeats}
+              onChordModify={handleChordModify}
               onProgressionReorder={(newProgression) => {
                 setProgression(newProgression);
                 saveProgression(newProgression);
               }}
-              onAddChord={showAddChordMenu ? handleAddChord : undefined}
+              onAddChord={handleAddChord}
               isAddChordMode={showAddChordMenu}
             />
+            
           </div>
         </div>
 
@@ -736,6 +790,7 @@ export default function EnhancedProgressionBuilder() {
               </div>
             </div>
 
+
             {/* Compact Progression Display */}
             {progression.length > 0 && (
               <div className="flex-shrink-0 pt-1 pb-1 px-2">
@@ -768,17 +823,41 @@ export default function EnhancedProgressionBuilder() {
               </div>
             )}
 
-            {/* Chord Editor Toolbar - Scrollable */}
-            <div className="flex-1 overflow-y-auto px-2 pt-0.5">
-              <ChordEditorToolbar
-                chord={
+            {/* Theory Panel - Scrollable */}
+            <div className="flex-1 overflow-hidden pt-1 px-2">
+              <div className="text-xs font-semibold text-white mb-2">
+                {selectedChordIndex !== null ? 'Chord Actions' : 'Theory Tools'}
+              </div>
+              <TheoryPanel
+                selectedChord={
                   selectedChordIndex !== null
                     ? progression[selectedChordIndex] || null
                     : null
                 }
-                substitutions={substitutions}
-                onSubstitute={handleSubstitute}
-                onRotate={handleRotate}
+                selectedIndex={selectedChordIndex}
+                currentProgression={progression}
+                currentKey={currentSong?.key || { root: 'C', mode: 'major' }}
+                onExtend={handleExtend}
+                onBorrow={handleBorrow}
+                onModulate={handleModulate}
+                onSubstitute={handleTheorySubstitute}
+                onInsertProgression={handleInsertProgression}
+                onAddNextChord={handleAddNextChord}
+              />
+            </div>
+
+            {/* Chord Editor Toolbar - Scrollable (hidden for now, can be toggled) */}
+            {false && (
+              <div className="flex-1 overflow-y-auto px-2 pt-0.5">
+                <ChordEditorToolbar
+                  chord={
+                    selectedChordIndex !== null
+                      ? progression[selectedChordIndex] || null
+                      : null
+                  }
+                  substitutions={substitutions}
+                  onSubstitute={handleSubstitute}
+                  onRotate={handleRotate}
                 canRotate={progression.length > 0}
                 onBeatsChange={
                   selectedChordIndex !== null
@@ -796,7 +875,8 @@ export default function EnhancedProgressionBuilder() {
                   setSubstitutions(null);
                 }}
               />
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -935,7 +1015,7 @@ export default function EnhancedProgressionBuilder() {
               </button>
               <button
                 onClick={handleSaveSchema}
-                className="px-4 py-2 text-sm font-medium bg-accent hover:bg-accent/80 text-white rounded transition-colors"
+                className="px-4 py-2 text-sm font-medium border-2 border-accent bg-accent/10 hover:bg-accent/20 text-white rounded transition-all"
               >
                 Save Schema
               </button>

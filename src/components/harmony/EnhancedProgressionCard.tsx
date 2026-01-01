@@ -19,16 +19,6 @@ const EMOTION_COLORS: Record<string, string> = {
   neutral: "bg-gray-500/20 border-gray-500/50 text-gray-300",
 };
 
-const EMOTION_EMOJIS: Record<string, string> = {
-  uplifting: "🎵",
-  melancholic: "💙",
-  tense: "⚡",
-  romantic: "💕",
-  hopeful: "✨",
-  dark: "🌑",
-  neutral: "🎶",
-};
-
 export function EnhancedProgressionCard({
   progression,
   songKey,
@@ -42,73 +32,63 @@ export function EnhancedProgressionCard({
 
   const analysis = analyzeProgression(progression, songKey);
   const emotionColor = EMOTION_COLORS[analysis.emotionalProfile.primary] || EMOTION_COLORS.neutral;
-  const emotionEmoji = EMOTION_EMOJIS[analysis.emotionalProfile.primary] || "🎶";
 
   return (
     <div className={`rounded-lg border ${className}`}>
-      {/* Emotional header - always visible */}
-      <div className={`p-4 rounded-t-lg border-b ${emotionColor}`}>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-2xl">{emotionEmoji}</span>
-          <h3 className="text-lg font-bold text-white">
-            {analysis.vibe.label}
-          </h3>
+      {/* Emotional header - always visible, compact */}
+      <div className={`p-2 rounded-t-lg border-b ${emotionColor}`}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-white truncate">
+              {analysis.vibe.label}
+            </h3>
+            <p className="text-xs text-white/80 truncate">
+              {analysis.vibe.description}
+            </p>
+          </div>
+          {/* Toggle theory section */}
+          <button
+            onClick={() => setShowTheory(!showTheory)}
+            className="flex items-center gap-1 text-xs text-white/80 hover:text-white transition-colors flex-shrink-0"
+          >
+            {showTheory ? (
+              <ChevronUp size={12} />
+            ) : (
+              <ChevronDown size={12} />
+            )}
+          </button>
         </div>
-        <p className="text-sm text-white/90 mb-3">
-          {analysis.vibe.description}
-        </p>
-
-        {/* Toggle theory section */}
-        <button
-          onClick={() => setShowTheory(!showTheory)}
-          className="flex items-center gap-1 text-xs text-white/80 hover:text-white transition-colors"
-        >
-          {showTheory ? (
-            <>
-              <ChevronUp size={14} />
-              Hide Music Theory
-            </>
-          ) : (
-            <>
-              <ChevronDown size={14} />
-              Show Music Theory
-            </>
-          )}
-        </button>
       </div>
 
-      {/* Collapsible theory section */}
+      {/* Collapsible theory section - compact */}
       {showTheory && (
-        <div className="p-4 bg-black space-y-3">
-          <div className="space-y-2">
+        <div className="p-2 bg-black space-y-1.5 text-xs">
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
             <div>
-              <span className="text-xs text-gray-400">Notation:</span>
-              <span className="ml-2 text-sm text-white font-mono">
+              <span className="text-gray-400">Notation:</span>
+              <span className="ml-1 text-white font-mono">
                 {analysis.romanNumerals}
               </span>
             </div>
             <div>
-              <span className="text-xs text-gray-400">Key:</span>
-              <span className="ml-2 text-sm text-white">
+              <span className="text-gray-400">Key:</span>
+              <span className="ml-1 text-white">
                 {songKey.root} {songKey.mode}
               </span>
             </div>
             <div>
-              <span className="text-xs text-gray-400">Degrees:</span>
-              <span className="ml-2 text-sm text-white">
+              <span className="text-gray-400">Degrees:</span>
+              <span className="ml-1 text-white">
                 {analysis.degrees.join(" - ")}
               </span>
             </div>
           </div>
 
           {analysis.vibe.famousExamples.length > 0 && (
-            <div className="pt-2 border-t border-gray-700">
-              <h4 className="text-xs font-semibold text-gray-400 mb-2">
-                Heard in:
-              </h4>
-              <div className="space-y-1">
-                {analysis.vibe.famousExamples.map((example, index) => (
-                  <div key={index} className="text-sm text-white">
+            <div className="pt-1.5 border-t border-gray-700">
+              <div className="space-y-0.5">
+                {analysis.vibe.famousExamples.slice(0, 2).map((example, index) => (
+                  <div key={index} className="text-white">
                     <span className="font-medium">"{example.song}"</span>
                     <span className="text-gray-400"> — {example.artist}</span>
                   </div>
@@ -117,9 +97,9 @@ export function EnhancedProgressionCard({
             </div>
           )}
 
-          <div className="pt-2 border-t border-gray-700">
-            <p className="text-xs text-gray-400 mb-1">When to use:</p>
-            <p className="text-sm text-white">{analysis.vibe.whenToUse}</p>
+          <div className="pt-1.5 border-t border-gray-700">
+            <p className="text-gray-400 mb-0.5">When to use:</p>
+            <p className="text-white leading-tight">{analysis.vibe.whenToUse}</p>
           </div>
         </div>
       )}

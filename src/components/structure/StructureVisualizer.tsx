@@ -36,6 +36,7 @@ export default function StructureVisualizer({
     useSongStore();
   const { connected } = useReaperConnection();
   const { showSuccess, showError, showInfo } = useToastStore();
+  const { progressions: namedProgressions } = useProgressionStore();
   const [building, setBuilding] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [reaperState, setReaperState] = useState<TimelineState | null>(null);
@@ -190,12 +191,12 @@ export default function StructureVisualizer({
           updateSong({ tempo: reaperStateToUse.sections[0].tempo });
         }
 
-        showSuccess("✅ Pulled from Reaper");
+        showSuccess("Pulled from Reaper");
         setReaperState(null); // Clear state after pulling
       }
     } catch (error) {
       console.error("Failed to pull from Reaper:", error);
-      showError(`❌ Failed to pull: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showError(`Failed to pull: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setSyncing(false);
     }
@@ -215,14 +216,14 @@ export default function StructureVisualizer({
       );
 
       if (result.success) {
-        showSuccess("✅ Synced to Reaper");
+        showSuccess("Synced to Reaper");
         setShowConflict(false);
       } else {
-        showError(`❌ Sync failed: ${result.error || "Unknown error"}`);
+        showError(`Sync failed: ${result.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Failed to sync to Reaper:", error);
-      showError(`❌ Sync failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showError(`Sync failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setSyncing(false);
     }
@@ -308,7 +309,7 @@ export default function StructureVisualizer({
                   </div>
                   <button
                     onClick={handleAssignProgressionToAll}
-                    className="ml-3 flex items-center gap-1.5 px-2 py-1 bg-blue-600 hover:bg-blue-700 border-none rounded text-white text-xs font-medium transition-colors"
+                    className="ml-3 flex items-center gap-1.5 px-2 py-1 border-2 border-blue-500 bg-blue-500/10 hover:bg-blue-500/20 rounded text-white text-xs font-medium transition-all"
                     title={`Assign "${namedProg.name}" to all sections`}
                   >
                     <Copy size={12} />
@@ -335,7 +336,7 @@ export default function StructureVisualizer({
             </div>
             <button
               onClick={handleAssignProgressionToAll}
-              className="flex items-center gap-2 px-3 py-1.5 bg-black hover:bg-black border-none rounded text-white text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 border-2 border-gray-700 bg-transparent hover:bg-gray-800/20 hover:border-gray-600 rounded text-white text-sm font-medium transition-all"
               title="Assign to all sections"
             >
               <Copy size={16} />
@@ -372,7 +373,7 @@ export default function StructureVisualizer({
               <button
                 onClick={handleBuildInReaper}
                 disabled={!connected || syncing || sections.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-900 border border-gray-700 hover:border-white rounded text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 border-2 border-gray-700 bg-transparent hover:bg-gray-800/20 hover:border-gray-600 rounded text-white text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 title={!connected ? "Connect to Reaper first" : "Sync to Reaper"}
               >
                 {syncing ? (
@@ -391,7 +392,7 @@ export default function StructureVisualizer({
               <button
                 onClick={() => handlePullFromReaper()}
                 disabled={!connected || syncing}
-                className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-900 border border-gray-700 hover:border-white rounded text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 border-2 border-gray-700 bg-transparent hover:bg-gray-800/20 hover:border-gray-600 rounded text-white text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Pull timeline from Reaper"
               >
                 <Download size={16} />

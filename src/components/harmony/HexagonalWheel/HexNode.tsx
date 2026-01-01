@@ -10,8 +10,9 @@ interface HexNodeProps {
   isSelected: boolean;
   showLabel: boolean;
   showDissonance: boolean;
-  onHover: () => void;
+  onHover: (hovering: boolean, event?: React.MouseEvent) => void;
   onClick: () => void;
+  onRightClick?: (event: React.MouseEvent) => void;
 }
 
 export function HexNode({
@@ -24,7 +25,8 @@ export function HexNode({
   showLabel,
   showDissonance,
   onHover,
-  onClick
+  onClick,
+  onRightClick
 }: HexNodeProps) {
   
   // Size based on state
@@ -51,10 +53,15 @@ export function HexNode({
   return (
     <g
       className={`hex-node ${isActive ? 'active' : 'inactive'}`}
-      onMouseEnter={onHover}
-      onMouseLeave={onHover}
-      onClick={onClick}
-      style={{ cursor: 'pointer' }}
+      onMouseEnter={isActive ? (e) => onHover(true, e.nativeEvent as unknown as React.MouseEvent) : undefined}
+      onMouseLeave={isActive ? () => onHover(false) : undefined}
+      onClick={isActive ? onClick : undefined}
+      onContextMenu={isActive && onRightClick ? (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onRightClick(e as unknown as React.MouseEvent);
+      } : undefined}
+      style={{ cursor: isActive ? 'pointer' : 'default' }}
     >
       {/* Hexagon shape */}
       <polygon
@@ -94,7 +101,8 @@ export function HexNode({
 function getHexagonPoints(x: number, y: number, size: number): string {
   const points = [];
   for (let i = 0; i < 6; i++) {
-    const angle = (60 * i - 30) * Math.PI / 180;
+    // Flat-top hexagons (better concentric packing than pointy-top)
+    const angle = (60 * i) * Math.PI / 180;
     const px = x + size * Math.cos(angle);
     const py = y + size * Math.sin(angle);
     points.push(`${px},${py}`);

@@ -1,13 +1,17 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Chord } from "../../types/music";
 import {
-  getCircleOfFifths,
+  getKeyArrangement,
   notesEqual,
   getNoteName,
   getNoteIndex,
+  type KeyArrangement,
 } from "../../lib/harmony/keyUtils";
 import { useSongStore } from "../../store/songStore";
 import { NOTE_COLORS } from "./ChordShape";
+import { DiatonicHexagon } from "./DiatonicHexagon";
+import { ChordContextMenu } from "./ChordContextMenu";
+import { extendChord, modifyChordQuality, addSuspension, transposeChord } from "../../lib/harmony/chordModifiers";
 
 interface CircularProgressionViewProps {
   progression: Chord[];
@@ -20,6 +24,7 @@ interface CircularProgressionViewProps {
   radius?: number;
   onAddChord?: (chord: Chord) => void;
   isAddChordMode?: boolean;
+  onChordModify?: (index: number, modifiedChord: Chord) => void;
 }
 
 interface ChordSegment {
@@ -39,10 +44,12 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
   totalBeats,
   onAddChord,
   isAddChordMode = false,
+  onChordModify,
 }) => {
   const { currentSong, updateKey } = useSongStore();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isUserEditingRef = useRef(false); // Track if user is actively editing
   const [isDragging, setIsDragging] = useState<number | null>(null);
   const [isResizing, setIsResizing] = useState<{
     index: number;
@@ -52,9 +59,26 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
   const [dragStartBeat, setDragStartBeat] = useState(0);
   const [localSegments, setLocalSegments] = useState<ChordSegment[]>([]);
   const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
+  const [keyArrangement, setKeyArrangement] = useState<KeyArrangement>('fifths');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [chordContextMenu, setChordContextMenu] = useState<{ x: number; y: number; chordIndex: number } | null>(null);
+  const [keyRotation, setKeyRotation] = useState(0);
+  const [snapToGrid, setSnapToGrid] = useState(true); // Enable snap to grid by default
+  const [snapIncrement, setSnapIncrement] = useState(1); // Snap to 1 beat increments
 
   const currentKey = currentSong?.key || { root: "C", mode: "major" };
-  const circleOfFifths = getCircleOfFifths();
+  const keyOrder = getKeyArrangement(keyArrangement);
+  
+  // Calculate rotation to bring selected key to 12 o'clock
+  useEffect(() => {
+    const selectedIndex = keyOrder.findIndex(note => notesEqual(note, currentKey.root));
+    if (selectedIndex !== -1) {
+      // Current angle of selected key: (index * 30 - 90) degrees
+      // To bring it to 12 o'clock (-90 degrees), rotate by: -90 - (index * 30 - 90) = -index * 30
+      const targetRotation = -selectedIndex * 30;
+      setKeyRotation(targetRotation);
+    }
+  }, [currentKey.root, keyOrder]);
 
   // Mode definitions with interval patterns and chord qualities
   // W = Whole step (tone), H = Half step (semitone)
@@ -143,24 +167,57 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
   };
 
   // Initialize segments based on progression
+  // Preserve existing startBeat positions when possible to allow gaps
   useEffect(() => {
-    const segments: ChordSegment[] = [];
-    let currentBeat = 0;
+    // Skip if user is actively editing (dragging/resizing)
+    if (isUserEditingRef.current) {
+      return;
+    }
 
-    progression.forEach((chord, index) => {
-      const duration = Math.min(chord.beats || 2, totalBeats - currentBeat); // Ensure we don't exceed totalBeats
-      if (duration > 0 && currentBeat < totalBeats) {
-        segments.push({
-          chord,
-          index,
-          startBeat: currentBeat,
-          duration: duration,
+    // If we have existing segments and the progression length matches, try to preserve positions
+    setLocalSegments((prevSegments) => {
+      if (prevSegments.length > 0 && prevSegments.length === progression.length) {
+        // Check if chords match by index (same roman numeral)
+        const chordsMatch = progression.every((chord, index) => {
+          const existingSegment = prevSegments[index];
+          return existingSegment && existingSegment.chord.romanNumeral === chord.romanNumeral;
         });
-        currentBeat += duration;
-      }
-    });
 
-    setLocalSegments(segments);
+        if (chordsMatch) {
+          // Update segments with new chord data but preserve startBeat positions
+          const updatedSegments = progression.map((chord, index) => {
+            const existingSegment = prevSegments[index];
+            const duration = Math.min(chord.beats || 2, totalBeats - existingSegment.startBeat);
+            return {
+              chord,
+              index,
+              startBeat: existingSegment.startBeat, // Preserve position
+              duration: duration > 0 ? duration : existingSegment.duration,
+            };
+          });
+          return updatedSegments;
+        }
+      }
+
+      // Otherwise, initialize sequentially (first time or structure changed)
+      const segments: ChordSegment[] = [];
+      let currentBeat = 0;
+
+      progression.forEach((chord, index) => {
+        const duration = Math.min(chord.beats || 2, totalBeats - currentBeat);
+        if (duration > 0 && currentBeat < totalBeats) {
+          segments.push({
+            chord,
+            index,
+            startBeat: currentBeat,
+            duration: duration,
+          });
+          currentBeat += duration; // Sequential positioning only on initial load
+        }
+      });
+
+      return segments;
+    });
   }, [progression, totalBeats]);
 
   // Convert beat to angle (0 = top, clockwise)
@@ -224,6 +281,7 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
     e: React.MouseEvent<SVGPathElement>
   ) => {
     e.preventDefault();
+    isUserEditingRef.current = true; // User started editing
     setIsDragging(segmentIndex);
     const segment = localSegments[segmentIndex];
     setDragStartBeat(segment.startBeat);
@@ -250,9 +308,19 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
       const currentBeat = angleToBeat(currentAngle);
       const beatDelta = currentBeat - dragStartBeat;
 
-      // Snap to 0.5 beat increments for smoother editing
-      const snappedBeat = Math.round(beatDelta * 2) / 2;
-      if (Math.abs(snappedBeat) < 0.25) return; // Only update if moved at least 0.25 beats
+      // Snap to beat grid if enabled
+      let snappedBeat = beatDelta;
+      if (snapToGrid) {
+        // Snap to the nearest grid increment
+        snappedBeat = Math.round(beatDelta / snapIncrement) * snapIncrement;
+      } else {
+        // Fine positioning: snap to 0.25 beat increments when grid is off
+        snappedBeat = Math.round(beatDelta * 4) / 4;
+      }
+      
+      // Only update if moved at least half the snap increment
+      const minMove = snapToGrid ? snapIncrement * 0.5 : 0.125;
+      if (Math.abs(snappedBeat) < minMove) return;
 
       // Handle dragging (moving) a chord segment
       if (isDragging !== null) {
@@ -265,16 +333,9 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
             Math.min(totalBeats - segment.duration, newStartBeat)
           );
 
-          // Check for overlaps with other segments
-          const hasOverlap = localSegments.some((otherSeg, idx) => {
-            if (idx === isDragging) return false;
-            const otherStart = otherSeg.startBeat;
-            const otherEnd = otherSeg.startBeat + otherSeg.duration;
-            const newEnd = newStartBeat + segment.duration;
-            return newStartBeat < otherEnd && newEnd > otherStart;
-          });
-
-          if (!hasOverlap && newStartBeat !== segment.startBeat) {
+          // Allow free positioning - only check if new position is valid
+          // (Allow gaps and overlaps - user has full control)
+          if (newStartBeat !== segment.startBeat) {
             const updatedSegments = [...localSegments];
             updatedSegments[isDragging] = {
               ...segment,
@@ -291,7 +352,7 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
       if (isResizing !== null) {
         const segment = localSegments[isResizing.index];
         if (segment) {
-          const minDuration = 0.5; // Minimum 0.5 beats
+          const minDuration = snapToGrid ? snapIncrement : 0.25; // Minimum duration based on snap
 
           let newStartBeat = segment.startBeat;
           let newDuration = segment.duration;
@@ -319,15 +380,8 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
             const newEnd = Math.min(totalBeats, dragStartBeat + snappedBeat);
             const newDur = newEnd - segment.startBeat;
 
-            // Check for overlaps
-            const hasOverlap = localSegments.some((otherSeg, idx) => {
-              if (idx === isResizing.index) return false;
-              const otherStart = otherSeg.startBeat;
-              const otherEnd = otherSeg.startBeat + otherSeg.duration;
-              return segment.startBeat < otherEnd && newEnd > otherStart;
-            });
-
-            if (newDur >= minDuration && newEnd <= totalBeats && !hasOverlap) {
+            // Allow free positioning - no overlap check
+            if (newDur >= minDuration && newEnd <= totalBeats) {
               newDuration = newDur;
             }
           }
@@ -363,29 +417,35 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
       getAngleFromEvent,
       angleToBeat,
       totalBeats,
+      snapToGrid,
+      snapIncrement,
     ]
   );
 
   const handleMouseUp = useCallback(() => {
+    isUserEditingRef.current = false; // User finished editing
+    
     if ((isDragging !== null || isResizing !== null) && onProgressionReorder) {
       // Update the actual progression when drag/resize ends
-      // Sort segments by startBeat and update progression
-      const sortedSegments = [...localSegments].sort(
-        (a, b) => a.startBeat - b.startBeat
-      );
-
-      const updatedProgression: Chord[] = sortedSegments.map((segment) => ({
+      // Keep segments in their current order (don't sort) to preserve user's arrangement
+      // This allows gaps and custom positioning
+      const updatedProgression: Chord[] = localSegments.map((segment) => ({
         ...segment.chord,
-        beats: Math.round(segment.duration * 2) / 2, // Round to 0.5 beats
+        beats: snapToGrid
+          ? Math.round(segment.duration / snapIncrement) * snapIncrement
+          : Math.round(segment.duration * 4) / 4,
       }));
 
       // Call the reorder callback with the new progression
+      // Note: We're not sorting by startBeat - preserving user's arrangement
       onProgressionReorder(updatedProgression);
     } else if (isResizing !== null) {
       // If only resizing (no reorder callback), just update beats
       const segment = localSegments[isResizing.index];
       if (segment) {
-        const newBeats = Math.round(segment.duration * 2) / 2;
+        const newBeats = snapToGrid
+          ? Math.round(segment.duration / snapIncrement) * snapIncrement
+          : Math.round(segment.duration * 4) / 4;
         onBeatsChange(isResizing.index, newBeats);
       }
     }
@@ -398,6 +458,8 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
     localSegments,
     onProgressionReorder,
     onBeatsChange,
+    snapToGrid,
+    snapIncrement,
   ]);
 
   useEffect(() => {
@@ -441,7 +503,7 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
   const outerRadius = 105;
   const midRadius = (innerRadius + outerRadius) / 2;
   const beatMarkerRadius = 110;
-  const keyCircleRadius = 160; // Outer radius for key selection circle
+  const keyCircleRadius = 200; // Outer radius for key selection circle (increased for better spacing)
 
   return (
     <div className="relative w-full flex flex-col items-center pt-1 pb-2">
@@ -450,10 +512,32 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
         <div
           ref={containerRef}
           className="relative w-[500px] h-[500px] flex items-center justify-center"
+          onContextMenu={(e) => {
+            // Only show context menu if clicking on the background, not on a key button
+            if ((e.target as HTMLElement).tagName !== 'BUTTON') {
+              e.preventDefault();
+              setContextMenu({ x: e.clientX, y: e.clientY });
+            }
+          }}
         >
           {/* Key Selection Circle (outer) */}
-          <div className="absolute inset-0">
-            {circleOfFifths.map((note, index) => {
+          <div 
+            className="absolute inset-0"
+            style={{
+              transform: `rotate(${keyRotation}deg)`,
+              transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+              transformOrigin: 'center center',
+            }}
+            onContextMenu={(e) => {
+              // Show context menu when right-clicking on empty space in the key circle area
+              if ((e.target as HTMLElement).tagName !== 'BUTTON') {
+                e.preventDefault();
+                e.stopPropagation();
+                setContextMenu({ x: e.clientX, y: e.clientY });
+              }
+            }}
+          >
+            {keyOrder.map((note, index) => {
               const angle = (index * 30 - 90) * (Math.PI / 180); // 30 degrees per note
               const radius = keyCircleRadius;
               const x = Math.cos(angle) * radius;
@@ -462,42 +546,150 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
               const isNatural = isNaturalNote(note);
               const noteColor = NOTE_COLORS[note] || NOTE_COLORS["C"];
 
+              // When selected, the hexagon shows at 12 o'clock, so make the button more subtle
+              // The selected key rotates to 12 o'clock, so make it smaller and more transparent
               return (
                 <button
                   key={note}
                   onClick={() => handleKeySelect(note)}
-                  className={`absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full font-semibold transition-all ${
+                  onContextMenu={(e) => {
+                    // Allow right-click on buttons to show context menu
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({ x: e.clientX, y: e.clientY });
+                  }}
+                  className={`absolute rounded font-semibold transition-all ${
                     isSelected
-                      ? "scale-110 shadow-lg z-10"
-                      : "z-0 hover:scale-105"
+                      ? "z-30" // Higher than hexagon to ensure it's clickable
+                      : "z-30 hover:scale-105" // All keys need high z-index to be clickable above hexagon
                   }`}
                   style={{
                     left: `calc(50% + ${x}px)`,
                     top: `calc(50% + ${y}px)`,
-                    width: isSelected ? "48px" : "40px",
-                    height: isSelected ? "48px" : "40px",
-                    fontSize: isSelected ? "16px" : "14px",
-                    background: noteColor,
+                    width: isSelected ? "36px" : "40px", // Smaller when selected (hexagon shows info)
+                    height: isSelected ? "36px" : "40px",
+                    fontSize: "14px", // Same size text for all
+                    background: isSelected ? "rgba(0, 0, 0, 0.4)" : "transparent",
                     border: isSelected
-                      ? "3px solid #FF6B35"
-                      : isNatural
-                      ? "2px solid rgba(255,255,255,0.3)"
-                      : "2px solid rgba(255,255,255,0.1)",
-                    boxShadow: isSelected
-                      ? "0 0 20px rgba(255, 107, 53, 0.5)"
-                      : "none",
+                      ? `2px solid ${noteColor}70` // More transparent border
+                      : `2px solid ${noteColor}`,
+                    boxShadow: "none", // No glow - hexagon is prominent when selected
                     color: "#FFFFFF",
+                    opacity: isSelected ? 0.7 : 1, // More transparent when selected
                     textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+                    transform: `translate(-50%, -50%) rotate(${-keyRotation}deg)`,
+                    transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                   title={`${note} ${
                     currentKey.mode === "major" ? "Major" : "Minor"
                   }`}
                 >
-                  {note}
+                  {!isSelected && note}
                 </button>
               );
             })}
           </div>
+          
+          {/* Diatonic Chord Hexagon - Positioned under selected key */}
+          <DiatonicHexagon
+            currentKey={currentKey}
+            onChordSelect={onAddChord || (() => {})}
+            keyCircleRadius={keyCircleRadius}
+            keyRotation={keyRotation}
+            keyOrder={keyOrder}
+          />
+          
+          {/* Chord Context Menu */}
+          {chordContextMenu && onChordModify && (
+            <ChordContextMenu
+              x={chordContextMenu.x}
+              y={chordContextMenu.y}
+              chord={localSegments[chordContextMenu.chordIndex]?.chord || progression[chordContextMenu.chordIndex]}
+              onClose={() => setChordContextMenu(null)}
+              onExtend={(extension) => {
+                const chord = localSegments[chordContextMenu.chordIndex]?.chord || progression[chordContextMenu.chordIndex];
+                const modified = extendChord(chord, extension);
+                onChordModify(chordContextMenu.chordIndex, modified);
+              }}
+              onModifyQuality={(quality) => {
+                const chord = localSegments[chordContextMenu.chordIndex]?.chord || progression[chordContextMenu.chordIndex];
+                const modified = modifyChordQuality(chord, quality);
+                onChordModify(chordContextMenu.chordIndex, modified);
+              }}
+              onAddSuspension={(suspension) => {
+                const chord = localSegments[chordContextMenu.chordIndex]?.chord || progression[chordContextMenu.chordIndex];
+                const modified = addSuspension(chord, suspension);
+                onChordModify(chordContextMenu.chordIndex, modified);
+              }}
+              onTranspose={(direction) => {
+                const chord = localSegments[chordContextMenu.chordIndex]?.chord || progression[chordContextMenu.chordIndex];
+                const modified = transposeChord(chord, direction);
+                onChordModify(chordContextMenu.chordIndex, modified);
+              }}
+            />
+          )}
+
+          {/* Key Arrangement Context Menu */}
+          {contextMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setContextMenu(null)}
+              />
+              <div
+                className="fixed z-50 bg-black border border-gray-700 rounded-lg shadow-xl py-1 min-w-[160px]"
+                style={{
+                  left: `${contextMenu.x}px`,
+                  top: `${contextMenu.y}px`,
+                }}
+              >
+                <button
+                  onClick={() => {
+                    setKeyArrangement('fifths');
+                    setContextMenu(null);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors ${
+                    keyArrangement === 'fifths' ? 'text-accent' : 'text-white'
+                  }`}
+                >
+                  Circle of Fifths
+                </button>
+                <button
+                  onClick={() => {
+                    setKeyArrangement('fourths');
+                    setContextMenu(null);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors ${
+                    keyArrangement === 'fourths' ? 'text-accent' : 'text-white'
+                  }`}
+                >
+                  Circle of Fourths
+                </button>
+                <button
+                  onClick={() => {
+                    setKeyArrangement('sixths');
+                    setContextMenu(null);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors ${
+                    keyArrangement === 'sixths' ? 'text-accent' : 'text-white'
+                  }`}
+                >
+                  Circle of Sixths
+                </button>
+                <button
+                  onClick={() => {
+                    setKeyArrangement('chromatic');
+                    setContextMenu(null);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-800 transition-colors ${
+                    keyArrangement === 'chromatic' ? 'text-accent' : 'text-white'
+                  }`}
+                >
+                  Chromatic
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Circular Timeline (inner) */}
           <svg
@@ -609,6 +801,17 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
                       e.stopPropagation();
                       onChordClick(idx);
                     }}
+                    onContextMenu={(e) => {
+                      if (onChordModify) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setChordContextMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          chordIndex: idx,
+                        });
+                      }
+                    }}
                   />
 
                   {/* Resize handle - Start edge */}
@@ -664,6 +867,7 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
                     onMouseDown={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
+                      isUserEditingRef.current = true; // User started editing
                       setIsResizing({ index: idx, edge: "end" });
                       const edgeBeat = segment.startBeat + segment.duration;
                       setDragStartBeat(edgeBeat);

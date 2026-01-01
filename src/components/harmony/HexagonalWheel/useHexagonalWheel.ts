@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { LayerType, HexPosition, Mode } from '../../../lib/harmony/hexagonal-layers-corrected';
-import { generateAllLayers } from '../../../lib/harmony/hexagonal-layers-corrected';
+import { generateAllLayers, HexPosition, LayerType, Mode } from '../../../lib/harmony/hexagonal-layers-corrected';
 
 export function useHexagonalWheel(rootPitch: number, mode: Mode) {
-  const [activeLayer, setActiveLayer] = useState<LayerType>('diatonic');
+  // All layers visible, one can be "focused" for interaction
+  const [focusedLayer, setFocusedLayer] = useState<LayerType>('diatonic');
   const [showDissonance, setShowDissonance] = useState(false);
   const [hoveredNode, setHoveredNode] = useState<HexPosition | null>(null);
   const [selectedNode, setSelectedNode] = useState<HexPosition | null>(null);
@@ -15,8 +15,8 @@ export function useHexagonalWheel(rootPitch: number, mode: Mode) {
   }, [rootPitch, mode]);
   
   return {
-    activeLayer,
-    setActiveLayer,
+    focusedLayer,
+    setFocusedLayer,
     showDissonance,
     setShowDissonance,
     hoveredNode,
@@ -26,4 +26,3 @@ export function useHexagonalWheel(rootPitch: number, mode: Mode) {
     layers
   };
 }
-

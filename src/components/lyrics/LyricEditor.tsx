@@ -167,7 +167,7 @@ export default function LyricEditor({
       {mode === "typewriter" && (
         <div className="bg-black/20 border border-black/50 rounded-lg p-3">
           <p className="text-sm text-white">
-            💡 <strong>Typewriter Mode:</strong> Keep writing, edit later.
+            <strong>Typewriter Mode:</strong> Keep writing, edit later.
             Backspace and arrow keys are disabled.
           </p>
         </div>

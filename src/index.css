@@ -18,10 +18,11 @@
 }
 
 @layer components {
-  /* Primary Button - Brand gradient */
+  /* Primary Button - Transparent with highlight */
   .btn-primary {
-    background: linear-gradient(to bottom right, #000000, #FF6B35);
-    @apply text-white
+    @apply bg-transparent
+           border-2
+           text-white
            px-6 py-3
            rounded-lg
            font-semibold
@@ -29,15 +30,21 @@
            uppercase
            tracking-wider
            transition-all duration-200
-           hover:translate-y-[-2px]
-           active:translate-y-[2px]
            disabled:opacity-50
            disabled:cursor-not-allowed;
-    box-shadow: 0 10px 15px -3px rgba(255, 107, 53, 0.3);
+    border-color: #FF6B35;
+    color: #FF6B35;
   }
   
   .btn-primary:hover {
-    box-shadow: 0 20px 25px -5px rgba(255, 107, 53, 0.4);
+    background-color: rgba(255, 107, 53, 0.15);
+    border-color: #FF8555;
+    color: #FF8555;
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+  }
+  
+  .btn-primary:active {
+    background-color: rgba(255, 107, 53, 0.25);
   }
 
   /* Secondary Button */

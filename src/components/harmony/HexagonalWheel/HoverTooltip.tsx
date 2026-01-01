@@ -4,15 +4,30 @@ import './HoverTooltip.css';
 
 interface HoverTooltipProps {
   node: HexPosition;
-  activeLayer?: string;
+  position?: { x: number; y: number };
 }
 
-export function HoverTooltip({ node, activeLayer }: HoverTooltipProps) {
+export function HoverTooltip({ node, position }: HoverTooltipProps) {
   
   const dissonance = calculateDissonance(node);
   
+  const style: React.CSSProperties = position
+    ? {
+        position: 'fixed',
+        left: `${position.x + 15}px`,
+        top: `${position.y - 10}px`,
+        transform: 'translateY(-100%)',
+        pointerEvents: 'none',
+        zIndex: 1000,
+      }
+    : {
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+      };
+  
   return (
-    <div className="hover-tooltip">
+    <div className="hover-tooltip" style={style}>
       
       {/* Chromatic layer - neutral explanation */}
       {node.layer === 'chromatic' && (

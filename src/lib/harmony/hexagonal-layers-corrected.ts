@@ -19,6 +19,7 @@ import { getScaleDegrees, getCircleOfFifths } from './keyUtils';
 import { PITCH_NAMES } from './constants';
 
 export type Mode = Key['mode'];
+export type LayerType = 'root' | 'diatonic' | 'extensions' | 'borrowed' | 'substitutions' | 'circle-fifths' | 'chromatic';
 
 // Helper to get note index (0-11)
 function getNoteIndex(note: string): number {
@@ -30,11 +31,6 @@ function getNoteIndex(note: string): number {
   if (flatIndex !== -1) return flatIndex;
   return 0; // Default to C
 }
-
-export type LayerType = 'root' | 'diatonic' | 'extensions' | 'borrowed' | 'substitutions' | 'circle-fifths' | 'chromatic';
-
-import { Key } from '../../types/music';
-export type Mode = Key['mode'];
 
 export interface HexPosition {
   layer: LayerType;
@@ -57,14 +53,16 @@ export interface HexLayer {
 const CHROMATIC_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 // Layer radii (distance from center in SVG units)
+// Tight packing: center hex (size 50) + gap (8) + regular hex (size 32) = ~90
+// Subsequent rings: previous radius + hex size (32) + gap (8) = previous + 40
 const RADII = {
   root: 0,
-  diatonic: 120,
-  extensions: 180,
-  borrowed: 240,
-  substitutions: 300,
-  'circle-fifths': 360,
-  chromatic: 420,
+  diatonic: 90,      // Tight against center hex
+  extensions: 130,   // Tight against diatonic
+  borrowed: 170,     // Tight against extensions
+  substitutions: 210, // Tight against borrowed
+  'circle-fifths': 250, // Tight against substitutions
+  chromatic: 290,    // Tight against circle-fifths
 };
 
 // Chord quality colors
@@ -93,38 +91,44 @@ function getQualityFromRoman(roman: string, mode: Mode): string {
   }
 }
 
-// Generate diatonic layer (7 chords)
+// Generate diatonic layer (6 chords, excluding root since center is I)
 function generateDiatonicLayer(rootPitch: number, mode: Mode): HexPosition[] {
   const scaleDegrees = getScaleDegrees({ root: CHROMATIC_NOTES[rootPitch], mode });
   const romanNumerals = mode === 'major'
     ? ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°']
     : ['i', 'ii°', 'III', 'iv', 'v', 'VI', 'VII'];
   
-  return scaleDegrees.map((degree, index) => {
-    const angle = (index * 360) / 7; // Evenly spaced around circle
+  // Skip root (index 0), use positions 1-6 for 6 hexagons
+  const positions: HexPosition[] = [];
+  for (let i = 1; i < 7; i++) {
+    const degree = scaleDegrees[i];
     const noteName = CHROMATIC_NOTES[degree];
-    const roman = romanNumerals[index];
+    const roman = romanNumerals[i];
     const quality = getQualityFromRoman(roman, mode);
     const chordName = quality === 'minor' ? noteName + 'm' : noteName;
+    // 6 hexagons evenly spaced: 0°, 60°, 120°, 180°, 240°, 300°
+    const angle = (i - 1) * 60;
     
-    return {
+    positions.push({
       layer: 'diatonic',
-      position: index,
+      position: i - 1, // 0-5 for 6 positions
       pitchClass: degree,
       chord: chordName,
       romanNumeral: roman,
       angle,
       color: QUALITY_COLORS[quality] || '#4A90E2',
-    };
-  });
+    });
+  }
+  
+  return positions;
 }
 
-// Generate extensions layer (7th chords)
+// Generate extensions layer (6 chords, 7th chords excluding root)
 function generateExtensionsLayer(rootPitch: number, mode: Mode): HexPosition[] {
   const diatonic = generateDiatonicLayer(rootPitch, mode);
   
   return diatonic.map((diatonicChord) => {
-    const extension = diatonicChord.romanNumeral === 'vii°' ? 'ø7' : '7';
+    const extension = diatonicChord.romanNumeral === 'vii°' || diatonicChord.romanNumeral === 'ii°' ? 'ø7' : '7';
     const chordName = diatonicChord.chord + extension;
     
     return {
@@ -169,7 +173,8 @@ function generateBorrowedLayer(rootPitch: number, mode: Mode): HexPosition[] {
     if (degreeIndex >= 0 && parallelScale[degreeIndex] !== undefined) {
       const degree = parallelScale[degreeIndex];
       const noteName = CHROMATIC_NOTES[degree];
-      const angle = (index * 360) / borrowedRomans.length;
+      // 6 hexagons evenly spaced: 0°, 60°, 120°, 180°, 240°, 300°
+      const angle = index * 60;
       const chordName = roman.includes('i') || roman.includes('ii') || roman.includes('iv') || roman.includes('v') 
         ? noteName + 'm' 
         : noteName;
@@ -187,7 +192,12 @@ function generateBorrowedLayer(rootPitch: number, mode: Mode): HexPosition[] {
     }
   });
   
-  return borrowedChords;
+  // Ensure exactly 6 positions (pad if needed, or take first 6)
+  return borrowedChords.slice(0, 6).map((chord, i) => ({
+    ...chord,
+    position: i,
+    angle: i * 60, // Recalculate angles for 6 positions
+  }));
 }
 
 // Generate substitutions layer (functional substitutes)
@@ -217,23 +227,55 @@ function generateSubstitutionsLayer(rootPitch: number, mode: Mode): HexPosition[
         ...diatonicChord,
         layer: 'substitutions',
         position: index,
-        angle: (index * 360) / substitutions.length,
+        angle: index * 60, // 6 hexagons: 0°, 60°, 120°, 180°, 240°, 300°
         color: '#BD10E0',
         substitutesFor: sub.from,
       });
     }
   });
   
-  return subChords;
+  // Ensure exactly 6 positions (pad with additional common substitutions if needed)
+  while (subChords.length < 6) {
+    // Add common substitutions that weren't already included
+    const allDiatonic = generateDiatonicLayer(rootPitch, mode);
+    const usedRomans = new Set(subChords.map(c => c.romanNumeral));
+    const available = allDiatonic.find(d => !usedRomans.has(d.romanNumeral));
+    if (available) {
+      subChords.push({
+        ...available,
+        layer: 'substitutions',
+        position: subChords.length,
+        angle: subChords.length * 60,
+        color: '#BD10E0',
+        substitutesFor: 'I',
+      });
+    } else {
+      break; // Can't find more, stop
+    }
+  }
+  
+  return subChords.slice(0, 6).map((chord, i) => ({
+    ...chord,
+    position: i,
+    angle: i * 60, // Recalculate angles for 6 positions
+  }));
 }
 
-// Generate circle of fifths layer (12 keys)
+// Generate circle of fifths layer (6 keys - most closely related)
 function generateCircleOfFifthsLayer(rootPitch: number): HexPosition[] {
   const circle = getCircleOfFifths();
+  const rootIndex = circle.findIndex(note => getNoteIndex(note) === rootPitch);
   
-  return circle.map((noteName, index) => {
+  // Pick 6 most closely related keys: root + 5 adjacent in circle of fifths
+  const relatedKeys: string[] = [];
+  for (let i = -2; i <= 3; i++) {
+    const idx = (rootIndex + i + circle.length) % circle.length;
+    relatedKeys.push(circle[idx]);
+  }
+  
+  return relatedKeys.map((noteName, index) => {
     const pitchClass = getNoteIndex(noteName);
-    const angle = (index * 360) / 12; // Evenly spaced
+    const angle = index * 60; // 6 hexagons: 0°, 60°, 120°, 180°, 240°, 300°
     
     return {
       layer: 'circle-fifths',

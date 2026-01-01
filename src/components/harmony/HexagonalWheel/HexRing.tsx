@@ -11,8 +11,9 @@ interface HexRingProps {
   showDissonance: boolean;
   hoveredNode: HexPosition | null;
   selectedNode: HexPosition | null;
-  onNodeHover: (node: HexPosition | null) => void;
+  onNodeHover: (node: HexPosition | null, event?: React.MouseEvent) => void;
   onNodeClick: (node: HexPosition) => void;
+  onNodeRightClick?: (node: HexPosition, event: React.MouseEvent) => void;
 }
 
 export function HexRing({
@@ -26,7 +27,8 @@ export function HexRing({
   hoveredNode,
   selectedNode,
   onNodeHover,
-  onNodeClick
+  onNodeClick,
+  onNodeRightClick
 }: HexRingProps) {
   
   return (
@@ -55,8 +57,17 @@ export function HexRing({
             isSelected={isSelected}
             showLabel={showLabels}
             showDissonance={showDissonance}
-            onHover={() => onNodeHover(isHovered ? null : node)}
-            onClick={() => onNodeClick(node)}
+            onHover={(hovering, event) => {
+              if (!isActive) return;
+              onNodeHover(hovering ? node : null, event);
+            }}
+            onClick={() => {
+              if (!isActive) return;
+              onNodeClick(node);
+            }}
+            onRightClick={onNodeRightClick ? (e) => {
+              onNodeRightClick(node, e as unknown as React.MouseEvent);
+            } : undefined}
           />
         );
       })}

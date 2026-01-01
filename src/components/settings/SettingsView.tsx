@@ -100,7 +100,7 @@ export default function SettingsView() {
                 <button
                   onClick={handleExportCurrentSong}
                   disabled={!currentSong}
-                  className="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 border-2 border-accent bg-accent/10 hover:bg-accent/20 text-white rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Download size={18} />
                   Export
@@ -122,7 +122,7 @@ export default function SettingsView() {
                 <button
                   onClick={handleExportAll}
                   disabled={songs.length === 0}
-                  className="px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 border-2 border-accent bg-accent/10 hover:bg-accent/20 text-white rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Download size={18} />
                   Export All
@@ -226,15 +226,15 @@ export default function SettingsView() {
           
           <div className="space-y-3 text-sm text-gray-400">
             <div className="p-3 bg-dark-elevated rounded border border-gray-800">
-              <p className="font-semibold text-white mb-1">💡 Auto-Save</p>
+              <p className="font-semibold text-white mb-1">Auto-Save</p>
               <p>Your songs are automatically saved 1.5 seconds after you stop typing. No need to manually save!</p>
             </div>
             <div className="p-3 bg-dark-elevated rounded border border-gray-800">
-              <p className="font-semibold text-white mb-1">💾 Export Regularly</p>
+              <p className="font-semibold text-white mb-1">Export Regularly</p>
               <p>Export your songs regularly as JSON backups to ensure you never lose your work.</p>
             </div>
             <div className="p-3 bg-dark-elevated rounded border border-gray-800">
-              <p className="font-semibold text-white mb-1">🎵 Play Progressions</p>
+              <p className="font-semibold text-white mb-1">Play Progressions</p>
               <p>Use the Space key or Play button in the top bar to preview your chord progressions.</p>
             </div>
           </div>

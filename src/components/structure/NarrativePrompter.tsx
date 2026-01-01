@@ -203,16 +203,16 @@ export default function NarrativePrompter({ sectionId }: NarrativePrompterProps)
           <h4 className="text-sm font-semibold text-white mb-2">Smart Suggestions</h4>
           <div className="space-y-2 text-sm text-gray-400">
             {section.lyrics.split('\n').length < 4 && (
-              <p>💡 This section could use more lines. Aim for 4-8 lines.</p>
+              <p>This section could use more lines. Aim for 4-8 lines.</p>
             )}
             {section.lyrics && !section.lyrics.match(/[.!?]$/m) && (
-              <p>💡 Consider varying sentence types. Add questions or exclamations for variety.</p>
+              <p>Consider varying sentence types. Add questions or exclamations for variety.</p>
             )}
             {section.type === 'verse' && section.lyrics && (
-              <p>💡 Make sure this verse adds new information or perspective compared to previous verses.</p>
+              <p>Make sure this verse adds new information or perspective compared to previous verses.</p>
             )}
             {section.type === 'chorus' && section.lyrics && (
-              <p>💡 The chorus should be the most memorable part. Is this your strongest hook?</p>
+              <p>The chorus should be the most memorable part. Is this your strongest hook?</p>
             )}
           </div>
         </div>

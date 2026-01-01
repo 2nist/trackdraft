@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSongStore } from "../../store/songStore";
-import { Mic, Music, TrendingUp } from "lucide-react";
+import { Mic, TrendingUp } from "lucide-react";
 
 export default function MelodyView() {
   const { currentSong } = useSongStore();
@@ -138,53 +138,6 @@ export default function MelodyView() {
           </div>
         </div>
 
-        {/* Virtual Keyboard */}
-        <div className="card lg:col-span-2">
-          <div className="flex items-center gap-2 mb-4">
-            <Music className="text-yellow-400" size={24} />
-            <h2 className="text-xl font-bold text-white">Virtual Keyboard</h2>
-          </div>
-          <p className="text-gray-400 mb-6">
-            Click notes to build your melody manually
-          </p>
-
-          <div className="p-4 bg-dark-elevated rounded border border-gray-800">
-            <div className="flex gap-1 justify-center">
-              {[
-                "C",
-                "C#",
-                "D",
-                "D#",
-                "E",
-                "F",
-                "F#",
-                "G",
-                "G#",
-                "A",
-                "A#",
-                "B",
-              ].map((note) => {
-                const isSharp = note.includes("#");
-                return (
-                  <button
-                    key={note}
-                    className={`${
-                      isSharp
-                        ? "bg-gray-900 text-white h-24 w-8 -mx-2 z-10"
-                        : "bg-white text-gray-900 h-32 w-12 border border-gray-300"
-                    } rounded hover:bg-accent hover:text-white transition-colors`}
-                  >
-                    {note}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-xs text-gray-500 text-center mt-4">
-              Virtual keyboard coming soon - will integrate with Tone.js for
-              playback
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

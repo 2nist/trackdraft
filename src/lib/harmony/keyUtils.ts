@@ -215,3 +215,49 @@ export function getCircleOfFifths(): string[] {
   return circleOrder.map((index) => CHROMATIC_NOTES[index]);
 }
 
+/**
+ * Get the circle of fourths order (reverse of fifths)
+ */
+export function getCircleOfFourths(): string[] {
+  // Circle of fourths: C, F, Bb, Eb, Ab, Db, Gb, B, E, A, D, G
+  const circleOrder = [0, 5, 10, 3, 8, 1, 6, 11, 4, 9, 2, 7];
+  return circleOrder.map((index) => CHROMATIC_NOTES[index]);
+}
+
+/**
+ * Get the circle of sixths order
+ */
+export function getCircleOfSixths(): string[] {
+  // Circle of sixths: C, A, F#, D#, B, G#, E, C#, A#, F, D, Bb
+  const circleOrder = [0, 9, 6, 3, 11, 8, 4, 1, 10, 5, 2, 7];
+  return circleOrder.map((index) => CHROMATIC_NOTES[index]);
+}
+
+/**
+ * Get chromatic order (ascending)
+ */
+export function getChromaticOrder(): string[] {
+  // Chromatic: C, C#, D, D#, E, F, F#, G, G#, A, A#, B
+  return [...CHROMATIC_NOTES];
+}
+
+export type KeyArrangement = 'fifths' | 'fourths' | 'sixths' | 'chromatic';
+
+/**
+ * Get key arrangement based on type
+ */
+export function getKeyArrangement(type: KeyArrangement): string[] {
+  switch (type) {
+    case 'fifths':
+      return getCircleOfFifths();
+    case 'fourths':
+      return getCircleOfFourths();
+    case 'sixths':
+      return getCircleOfSixths();
+    case 'chromatic':
+      return getChromaticOrder();
+    default:
+      return getCircleOfFifths();
+  }
+}
+
