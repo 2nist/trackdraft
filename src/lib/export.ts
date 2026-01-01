@@ -111,7 +111,9 @@ export function downloadFile(content: string, filename: string, mimeType: string
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Revoking immediately can cancel downloads in some browsers.
+    // Delay revocation until the browser has consumed the URL.
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   } catch (error) {
     throw new Error(`Failed to download file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
