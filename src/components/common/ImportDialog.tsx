@@ -74,7 +74,7 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
       // Save to store
       saveSong();
 
-      showSuccess('✅ Project imported successfully!');
+      showSuccess('Project imported successfully!');
       onClose();
     } catch (err) {
       console.error('Import error:', err);
@@ -136,8 +136,8 @@ export function ImportDialog({ onClose }: ImportDialogProps) {
               <Upload className="mx-auto text-gray-500 mb-4" size={48} />
               <p className="text-white text-lg mb-2">Drop JSON file here</p>
               <p className="text-gray-400 mb-4">or</p>
-              <button className="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors">
-                📂 Browse Files
+              <button className="px-6 py-2 border-2 border-gray-700 bg-transparent hover:bg-gray-800/20 hover:border-gray-600 text-white rounded transition-all">
+                Browse Files
               </button>
               <p className="text-gray-500 text-sm mt-4">
                 Supported formats: JAMS, JCRD, McGill Billboard / SALAMI

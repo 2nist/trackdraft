@@ -24,18 +24,12 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-surface-1 border-r border-surface-2 flex flex-col">
       <div className="p-6 border-b border-surface-2">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center">
           <img 
             src="/logo.png" 
             alt="TRACKdrafT Logo" 
-            className="h-10 w-auto"
+            className="h-24 w-auto"
           />
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-br from-black to-track-orange-700 bg-clip-text text-transparent">
-              TRACKdrafT
-            </h1>
-            <p className="text-xs text-text-tertiary mt-1">Draft Your Next Hit</p>
-          </div>
         </div>
       </div>
       
@@ -49,10 +43,10 @@ export default function Sidebar() {
               <li key={item.path}>
                 <Link
                   to={item.path}
-      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
         isActive
-          ? 'bg-gradient-to-br from-black to-track-orange-700 text-white'
-          : 'text-text-secondary hover:bg-surface-2 hover:text-text-primary'
+          ? 'border-2 border-accent bg-accent/10 text-white'
+          : 'text-text-secondary hover:bg-surface-2 hover:text-text-primary border-2 border-transparent'
       }`}
                 >
                   <Icon size={20} />

@@ -174,7 +174,7 @@ export default function RhymeSuggestionPanel({
 
       {/* Info */}
       <div className="mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500">
-        <p>💡 Click a word to replace "{word}" in your lyrics</p>
+        <p>Click a word to replace "{word}" in your lyrics</p>
         <p className="mt-1">Powered by Datamuse API</p>
       </div>
     </div>
