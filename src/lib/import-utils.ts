@@ -3,16 +3,23 @@
  */
 
 import { Song, Key, SongSection, Chord } from '../types/music';
-import { TrackDraftProject, TrackDraftSection, TrackDraftChord } from '../types/jams';
-import { getNoteName, getNoteIndex } from './harmony/keyUtils';
+import { TrackDraftProject, TrackDraftChord } from '../types/jams';
+import { getNoteIndex } from './harmony/keyUtils';
 
 /**
  * Convert TrackDraftProject to Song format
  */
 export function trackDraftProjectToSong(project: TrackDraftProject): Song {
-  const keyParts = project.metadata.key.split(' ');
-  const root = keyParts[0];
-  const mode = keyParts[1].toLowerCase() as Key['mode'];
+  // TrackDraft key strings are commonly like "C major" / "F# minor", but can be inconsistent.
+  // Default to C major if parsing fails.
+  const keyString = (project.metadata.key || '').trim();
+  const match = keyString.match(/^([A-G](?:#|b)?)(?:\s+(\w+))?$/i);
+  const root = (match?.[1] ?? 'C').toUpperCase();
+  const modeRaw = (match?.[2] ?? 'major').toLowerCase();
+  const mode: Key['mode'] =
+    modeRaw === 'minor' || modeRaw === 'major'
+      ? (modeRaw as Key['mode'])
+      : 'major';
 
   // Convert sections
   const sections: SongSection[] = project.structure.sections.map((section) => {
@@ -23,7 +30,9 @@ export function trackDraftProjectToSong(project: TrackDraftProject): Song {
 
     return {
       id: section.id,
-      type: section.type,
+      // TrackDraft allows a "transition" section; TrackDraft SongSection does not.
+      // Treat transitions as bridges by default so they remain visible/editable.
+      type: (section.type === 'transition' ? 'bridge' : section.type) as SongSection['type'],
       duration: section.bars,
       chords,
       // Note: lyrics and melody not in TrackDraftProject format
@@ -65,7 +74,9 @@ function trackDraftChordToChord(trackDraftChord: TrackDraftChord, key: Key): Cho
     'B',
   ];
 
-  const rootNote = noteNames[trackDraftChord.root];
+  const normalizedRootIndex =
+    Number.isFinite(trackDraftChord.root) ? ((trackDraftChord.root % 12) + 12) % 12 : 0;
+  const rootNote = noteNames[normalizedRootIndex];
   
   // Map chord type to quality string
   const typeToQuality: { [key: string]: string } = {
@@ -89,7 +100,7 @@ function trackDraftChordToChord(trackDraftChord: TrackDraftChord, key: Key): Cho
 
   // For now, use a simple roman numeral approximation
   // Full conversion would require key analysis
-  const rootIndex = trackDraftChord.root;
+  const rootIndex = normalizedRootIndex;
   const keyRootIndex = getNoteIndex(key.root);
   const interval = (rootIndex - keyRootIndex + 12) % 12;
   
@@ -152,13 +163,20 @@ function generateChordNotes(root: string, quality: string): string[] {
  * Determine harmonic function from interval and quality
  */
 function determineFunction(interval: number, quality: string): 'tonic' | 'subdominant' | 'dominant' {
-  // Simplified function detection
-  if (interval === 0 || interval === 7) return 'tonic';
-  if (interval === 5 || interval === 10) return 'dominant';
-  if (interval === 2 || interval === 4) return 'subdominant';
-  
-  // Default based on quality
-  if (quality.includes('7') && interval === 7) return 'dominant';
+  // Simplified function detection based on scale-degree distance from key root.
+  // interval is semitone distance (0-11) from key root -> chord root.
+  //
+  // Common-practice approximations:
+  // - Tonic: I (0), iii (4), vi (9)
+  // - Subdominant: ii (2), IV (5), bII (1)
+  // - Dominant: V (7), vii° (11), bVII (10)
+  if (interval === 0 || interval === 4 || interval === 9) return 'tonic';
+  if (interval === 2 || interval === 5 || interval === 1) return 'subdominant';
+  if (interval === 7 || interval === 11 || interval === 10) return 'dominant';
+
+  // Heuristic: sevenths tend to feel dominant when they aren't clearly tonic/subdominant.
+  if (quality.includes('7')) return 'dominant';
+
   return 'tonic';
 }
 
