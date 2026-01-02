@@ -1,0 +1,64 @@
+.layer-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(42, 42, 62, 0.6);
+  border-radius: 12px;
+}
+
+.layer-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.layer-button {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.layer-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.layer-button.focused {
+  background: rgba(74, 144, 226, 0.2);
+  border-color: #4A90E2;
+  color: #fff;
+  font-weight: 700;
+}
+
+.dissonance-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  color: #ccc;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.dissonance-toggle:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dissonance-toggle input {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+

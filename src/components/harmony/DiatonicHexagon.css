@@ -1,0 +1,112 @@
+.diatonic-hexagon-container {
+  position: absolute;
+  z-index: 20; /* Below key buttons (z-30) so keys remain clickable */
+  pointer-events: none; /* Container doesn't capture clicks */
+  width: 240px;
+  height: 240px;
+}
+
+.diatonic-hexagon-svg {
+  pointer-events: none; /* SVG background doesn't capture clicks */
+  /* Only individual hexagon polygons will have pointer-events */
+}
+
+/* Ensure hexagon polygons can receive clicks */
+.hex-chord {
+  pointer-events: all;
+}
+
+.hex-chord {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.hex-chord:hover {
+  fill: rgba(255, 255, 255, 0.15) !important;
+  stroke: rgba(255, 255, 255, 0.4) !important;
+  transform: scale(1.1);
+}
+
+/* Add Mode Visual Feedback */
+.diatonic-hexagon-container.add-mode-active {
+  filter: drop-shadow(0 0 20px rgba(74, 144, 226, 0.4));
+  animation: add-mode-pulse 2s ease-in-out infinite;
+}
+
+@keyframes add-mode-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 20px rgba(74, 144, 226, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(74, 144, 226, 0.6));
+  }
+}
+
+.hex-chord.add-mode-chord {
+  animation: chord-glow 1.5s ease-in-out infinite;
+  cursor: pointer !important;
+}
+
+@keyframes chord-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 8px currentColor);
+  }
+}
+
+.hex-chord.add-mode-chord:hover {
+  filter: drop-shadow(0 0 12px currentColor) !important;
+  transform: scale(1.15) !important;
+  stroke-width: 3px !important;
+}
+
+.hex-key {
+  filter: drop-shadow(0 0 12px rgba(255, 107, 53, 0.6));
+  transition: all 0.2s ease;
+}
+
+.hex-key:hover {
+  fill: rgba(255, 107, 53, 0.35) !important;
+  stroke: #FF8555 !important;
+  filter: drop-shadow(0 0 16px rgba(255, 107, 53, 0.8));
+}
+
+.hex-key-text {
+  font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+  pointer-events: none;
+}
+
+.hex-key-name {
+  font-size: 14px;
+  font-weight: 800;
+  fill: #ffffff;
+}
+
+.hex-key-mode {
+  font-size: 9px;
+  font-weight: 600;
+  fill: #9ca3af;
+  text-transform: capitalize;
+}
+
+.hex-chord-text {
+  font-family: system-ui, -apple-system, sans-serif;
+  user-select: none;
+}
+
+.hex-roman {
+  font-size: 7.5px;
+  font-weight: 700;
+  fill: #9ca3af;
+  letter-spacing: 0.2px;
+}
+
+.hex-label {
+  font-size: 8px;
+  font-weight: 700;
+  fill: #ffffff;
+  letter-spacing: 0.2px;
+}

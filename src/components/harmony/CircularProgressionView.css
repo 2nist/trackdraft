@@ -1,0 +1,7 @@
+/* Key selection button styles */
+.key-selection-button {
+  border: 3px solid !important;
+  background: transparent !important;
+  outline: none !important;
+}
+

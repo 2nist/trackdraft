@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans antialiased;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    background-color: #000000; /* black background */
+    color: #FFFFFF; /* white text */
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  /* Primary Button - Transparent with highlight */
+  .btn-primary {
+    @apply bg-transparent
+           border-2
+           text-white
+           px-6 py-3
+           rounded-lg
+           font-semibold
+           text-sm
+           uppercase
+           tracking-wider
+           transition-all duration-200
+           disabled:opacity-50
+           disabled:cursor-not-allowed;
+    border-color: #FF6B35;
+    color: #FF6B35;
+  }
+  
+  .btn-primary:hover {
+    background-color: rgba(255, 107, 53, 0.15);
+    border-color: #FF8555;
+    color: #FF8555;
+    box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+  }
+  
+  .btn-primary:active {
+    background-color: rgba(255, 107, 53, 0.25);
+  }
+
+  /* Secondary Button */
+  .btn-secondary {
+    @apply bg-transparent
+           border-2
+           px-6 py-3
+           rounded-lg
+           font-semibold
+           text-sm
+           uppercase
+           tracking-wider
+           transition-all duration-200;
+    border-color: #FF6B35; /* track-orange-700 */
+    color: #FF6B35;
+  }
+  
+  .btn-secondary:hover {
+    background-color: rgba(255, 107, 53, 0.1);
+  }
+
+  /* Ghost Button */
+  .btn-ghost {
+    @apply bg-transparent
+           px-4 py-2
+           rounded-md
+           transition-all duration-200;
+    color: #CBD5E1; /* text-secondary */
+  }
+  
+  .btn-ghost:hover {
+    background-color: rgba(203, 213, 225, 0.1);
+    color: #F8FAFC; /* text-primary */
+  }
+
+  /* Default Card */
+  .card {
+    @apply rounded-xl p-6;
+    background-color: #000000; /* black */
+    border: none; /* no outlines */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Song Card (interactive) */
+  .card-interactive {
+    @apply rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer;
+    background-color: #000000; /* black */
+    border: none; /* no outlines */
+  }
+  
+  .card-interactive:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(255, 107, 53, 0.2);
+  }
+
+  /* Elevated Card (modals) */
+  .card-elevated {
+    @apply rounded-xl p-6;
+    background-color: #000000; /* black */
+    border: none; /* no outlines */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  }
+}
+
