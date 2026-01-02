@@ -105,6 +105,85 @@ npm run build
 
 The built files will be in the `dist` directory.
 
+## Testing
+
+TrackDraft uses Vitest for unit and integration testing, with React Testing Library for component testing.
+
+### Running Tests
+
+```bash
+# Run tests once
+npm run test:run
+
+# Run tests in watch mode
+npm run test
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests with coverage report
+npm run test:coverage
+```
+
+### Test Structure
+
+Tests are located alongside the code they test, following the naming convention `*.test.ts` or `*.test.tsx`.
+
+```
+src/
+├── components/
+│   └── common/
+│       ├── Toast.tsx
+│       └── Toast.test.tsx        # Component tests
+├── lib/
+│   └── lyrics/
+│       ├── syllableCounter.ts
+│       └── syllableCounter.test.ts # Utility tests
+└── test/
+    ├── setup.ts                  # Global test setup
+    └── test-utils.tsx            # Testing utilities
+```
+
+### Writing Tests
+
+#### Component Tests
+```tsx
+import { render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { MyComponent } from './MyComponent'
+
+describe('MyComponent', () => {
+  it('renders correctly', () => {
+    render(<MyComponent />)
+    expect(screen.getByText('Hello')).toBeInTheDocument()
+  })
+})
+```
+
+#### Utility Tests
+```ts
+import { describe, it, expect } from 'vitest'
+import { myUtility } from './myUtility'
+
+describe('myUtility', () => {
+  it('returns expected result', () => {
+    const result = myUtility('input')
+    expect(result).toBe('expected output')
+  })
+})
+```
+
+### Test Utilities
+
+The `src/test/test-utils.tsx` file provides:
+- Custom render function with providers
+- Mock data generators
+- Common test helpers
+
+### Coverage
+
+Tests include coverage reporting with Istanbul (v8). Coverage reports are generated in the `coverage/` directory when running `npm run test:coverage`.
+
 ## Project Structure
 
 ```
@@ -171,9 +250,14 @@ This is a personal project, but suggestions and feedback are welcome!
 
 TrackDraft includes an optional Reaper DAW bridge that allows syncing song sections and structures with Reaper. **This feature is completely optional** - TrackDraft works fully without it.
 
-**Important Note for Windows Users:** The Reaper bridge requires LuaSocket, which needs pre-built Windows DLL files. These are not easily available in recent LuaSocket releases. The bridge will show "Reaper Disconnected" status, but this doesn't affect any other TrackDraft functionality.
+The bridge uses a lightweight Node.js server for communication (no complex dependencies like LuaSocket required). It works reliably on all platforms including Windows.
 
-For more information about the Reaper bridge setup, see `reaper-bridge/README.md`. The bridge feature is experimental and may require manual setup.
+To set up the Reaper bridge:
+1. See `reaper-bridge/ALTERNATIVE_SETUP.md` for detailed installation instructions
+2. Start the bridge server with `npm run bridge`
+3. Load the bridge script in Reaper
+
+For more information, see `reaper-bridge/ALTERNATIVE_SETUP.md`.
 
 ## License
 

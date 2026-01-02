@@ -1,59 +1,18 @@
 # TrackDraft Reaper Bridge (Optional Feature)
 
-Lua server implementation for bidirectional synchronization between TrackDraft and Reaper DAW.
+Node.js-based bridge for bidirectional synchronization between TrackDraft and Reaper DAW.
 
 **⚠️ IMPORTANT: This is an OPTIONAL feature. TrackDraft works completely without it.** This bridge only adds Reaper DAW integration capabilities. If you don't use Reaper or don't need this integration, you can ignore this entire directory.
 
-**⚠️ Windows Users:** LuaSocket installation for Windows is problematic due to DLL compatibility issues. 
+## Quick Start
 
-**→ Use the alternative IPC-based bridge instead:** See `ALTERNATIVE_SETUP.md` for a Windows-friendly solution that uses Node.js instead of LuaSocket. This is the recommended approach for Windows users!
+**For setup instructions, see `ALTERNATIVE_SETUP.md`** - this is the recommended approach for all users (Windows, Mac, Linux).
 
 ## Prerequisites
 
-- Reaper DAW (v6.0+)
-- LuaSocket library
-- dkjson library
-
-### Installing LuaSocket
-
-**Windows (Automated):**
-1. Open PowerShell
-2. Navigate to the `reaper-bridge` directory:
-   ```powershell
-   cd path\to\trackdraft-main\reaper-bridge
-   ```
-3. Run the installation script:
-   ```powershell
-   .\install-luasocket.ps1
-   ```
-   For system-wide installation (requires Administrator):
-   ```powershell
-   .\install-luasocket.ps1 -SystemWide
-   ```
-   The script will automatically download and install LuaSocket to the correct location.
-
-**Windows (Manual):**
-1. Download LuaSocket from https://github.com/diegonehab/luasocket/releases
-2. Extract to Reaper's Lua directory:
-   - `%APPDATA%\REAPER\Scripts\` (user scripts)
-   - OR `C:\Program Files\REAPER\Scripts\` (system-wide)
-3. Ensure `socket` folder and `socket.lua`, `ltn12.lua`, `mime.lua` are present
-
-**Mac:**
-```bash
-# Using Homebrew
-brew install luarocks
-luarocks install luasocket
-
-# Or manually download from GitHub releases
-```
-
-**Linux:**
-```bash
-sudo apt install lua-socket
-# or
-sudo yum install lua-socket
-```
+- **Reaper DAW** (v6.0+)
+- **Node.js** (v14 or higher)
+- **dkjson library** for Lua
 
 ### Installing dkjson
 
@@ -64,34 +23,13 @@ sudo yum install lua-socket
 
 ## Installation
 
-1. Copy the entire `reaper-bridge/` folder to your Reaper Scripts directory:
-   - **Windows:** `%APPDATA%\REAPER\Scripts\TrackDraft\`
-   - **Mac:** `~/Library/Application Support/REAPER/Scripts/TrackDraft/`
-   - **Linux:** `~/.config/REAPER/Scripts/TrackDraft/`
+**For detailed setup instructions, see `ALTERNATIVE_SETUP.md`**
 
-   The structure should be:
-   ```
-   Scripts/TrackDraft/
-   ├── reaper_bridge.lua
-   └── lib/
-       ├── json.lua (dkjson contents)
-       └── commands/
-           └── timeline.lua
-   ```
-
-2. In Reaper:
-   - Actions → Show action list
-   - New action... → Load ReaScript...
-   - Navigate to and select `reaper_bridge.lua`
-   - Click "Run" or assign a keyboard shortcut
-
-3. Verify it's running:
-   - Open Reaper Console (View → Show Console)
-   - You should see: `TrackDraft Bridge: Listening on port 8888`
-
-4. (Optional) Add to Reaper startup:
-   - Actions → Set action to run on startup
-   - Select "TrackDraft Bridge"
+Quick overview:
+1. Copy the `reaper-bridge/` folder to your Reaper Scripts directory
+2. Start the Node.js bridge server: `npm run bridge`
+3. Load `reaper_bridge_ipc.lua` in Reaper
+4. TrackDraft will connect automatically
 
 ## Usage
 
@@ -227,20 +165,15 @@ The bridge monitors timeline changes every 2 seconds:
 
 ## Troubleshooting
 
-### "LuaSocket not found"
-- Install LuaSocket (see Prerequisites)
-- Ensure it's in Reaper's Lua path
-- Restart Reaper after installation
-
 ### "JSON library not found"
 - Download dkjson.lua
 - Copy its contents into `lib/json.lua`
 - Ensure the file contains the complete dkjson code
 
-### "Failed to bind to port 8888"
-- Another instance of the bridge may be running
-- Close other Reaper instances
-- Check if another application is using port 8888
+### "Failed to connect to Reaper"
+- Make sure the Node.js bridge server is running (`npm run bridge`)
+- Verify `reaper_bridge_ipc.lua` is loaded in Reaper
+- Check if port 8888 is available
 
 ### Markers not appearing
 - Check Reaper Console for errors
@@ -288,9 +221,12 @@ The bridge monitors timeline changes every 2 seconds:
 
 ## Files
 
-- `reaper_bridge.lua` - Main HTTP server and command router
+- `bridge-server.js` - Node.js HTTP server
+- `reaper_bridge_ipc.lua` - Reaper script for IPC communication
 - `lib/commands/timeline.lua` - Timeline operations and change detection
+- `lib/commands/chords.lua` - Chord operations
 - `lib/json.lua` - JSON encoder/decoder (dkjson library)
+- `ALTERNATIVE_SETUP.md` - Detailed setup instructions
 
 ## Development
 
