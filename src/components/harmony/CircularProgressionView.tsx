@@ -22,10 +22,15 @@ interface CircularProgressionViewProps {
   onBeatsChange: (index: number, beats: number) => void;
   onProgressionReorder?: (newProgression: Chord[]) => void;
   totalBeats: number; // Total beats for the progression (bars * beatsPerBar)
+  beatsPerBar?: number; // Beats per bar for beat grid display
   radius?: number;
   onAddChord?: (chord: Chord) => void;
   isAddChordMode?: boolean;
   onChordModify?: (index: number, modifiedChord: Chord) => void;
+  /** Focus on a specific chord index when opening */
+  focusChordIndex?: number;
+  /** Whether to show the outer key ring */
+  showKeyRing?: boolean;
 }
 
 interface ChordSegment {
@@ -43,9 +48,12 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
   onBeatsChange,
   onProgressionReorder,
   totalBeats,
+  beatsPerBar = 4,
   onAddChord,
   isAddChordMode = false,
   onChordModify,
+  focusChordIndex: _focusChordIndex,
+  showKeyRing: _showKeyRing = true,
 }) => {
   const { currentSong, updateKey } = useSongStore();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -64,8 +72,8 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [chordContextMenu, setChordContextMenu] = useState<{ x: number; y: number; chordIndex: number } | null>(null);
   const [keyRotation, setKeyRotation] = useState(0);
-  const [snapToGrid, setSnapToGrid] = useState(true); // Enable snap to grid by default
-  const [snapIncrement, setSnapIncrement] = useState(1); // Snap to 1 beat increments
+  const [snapToGrid, _setSnapToGrid] = useState(true); // Enable snap to grid by default
+  const [snapIncrement, _setSnapIncrement] = useState(1); // Snap to 1 beat increments
 
   const currentKey = currentSong?.key || { root: "C", mode: "major" };
   const keyOrder = getKeyArrangement(keyArrangement);
@@ -566,7 +574,8 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
               const x = Math.cos(angle) * radius;
               const y = Math.sin(angle) * radius;
               const isSelected = notesEqual(note, currentKey.root);
-              const isNatural = isNaturalNote(note);
+              // isNatural can be used for styling natural vs accidental notes
+              void isNaturalNote(note);
               const noteColor = NOTE_COLORS[note] || NOTE_COLORS["C"];
               
               // Debug: log if color is not found
@@ -659,6 +668,24 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
               onRemove={() => {
                 onChordRemove(chordContextMenu.chordIndex);
               }}
+              duration={localSegments[chordContextMenu.chordIndex]?.duration || progression[chordContextMenu.chordIndex]?.beats || 2}
+              onDurationChange={(beats) => {
+                onBeatsChange(chordContextMenu.chordIndex, beats);
+              }}
+              maxDuration={totalBeats}
+              showActions={true}
+              onCopy={() => {
+                const chord = localSegments[chordContextMenu.chordIndex]?.chord || progression[chordContextMenu.chordIndex];
+                if (onAddChord) {
+                  onAddChord({ ...chord, beats: 2 });
+                }
+              }}
+              onInsertAfter={() => {
+                const chord = localSegments[chordContextMenu.chordIndex]?.chord || progression[chordContextMenu.chordIndex];
+                if (onAddChord) {
+                  onAddChord({ ...chord, beats: 2 });
+                }
+              }}
             />
           )}
 
@@ -743,7 +770,7 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
               className="text-gray-700"
             />
 
-            {/* Beat markers */}
+            {/* Beat markers with enhanced bar lines */}
             {Array.from({ length: Math.ceil(totalBeats) }).map((_, beat) => {
               const angle = beatToAngle(beat);
               const rad = degToRad(angle);
@@ -752,22 +779,43 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
               const x2 = 130 + beatMarkerRadius * Math.cos(rad);
               const y2 = 130 + beatMarkerRadius * Math.sin(rad);
 
-              // Mark every 2 beats more prominently
+              // Mark downbeats (first beat of each bar) more prominently
+              const isDownbeat = beat % beatsPerBar === 0;
+              // Mark every 2 beats with medium emphasis
               const isBeatMarker = beat % 2 === 0;
+              // Calculate bar number for labeling
+              const barNumber = Math.floor(beat / beatsPerBar) + 1;
 
               return (
-                <line
-                  key={beat}
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke="currentColor"
-                  strokeWidth={isBeatMarker ? 2 : 1}
-                  className={
-                    isBeatMarker ? "text-gray-600" : "text-gray-700 opacity-50"
-                  }
-                />
+                <g key={beat}>
+                  <line
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="currentColor"
+                    strokeWidth={isDownbeat ? 2.5 : isBeatMarker ? 1.5 : 1}
+                    className={
+                      isDownbeat 
+                        ? "text-gray-500" 
+                        : isBeatMarker 
+                        ? "text-gray-600" 
+                        : "text-gray-700 opacity-50"
+                    }
+                  />
+                  {/* Bar number labels on downbeats */}
+                  {isDownbeat && (
+                    <text
+                      x={130 + (beatMarkerRadius + 8) * Math.cos(rad)}
+                      y={130 + (beatMarkerRadius + 8) * Math.sin(rad)}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      className="text-[9px] fill-gray-500 font-medium"
+                    >
+                      {barNumber}
+                    </text>
+                  )}
+                </g>
               );
             })}
 
@@ -910,7 +958,7 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
                     }}
                   />
 
-                  {/* Chord label - show both roman numeral and chord name more clearly */}
+                  {/* Chord label - show chord name, roman numeral, and duration */}
                   {segment.duration >= 0.5 && (
                     <g>
                       {/* Background circle for better readability */}
@@ -937,8 +985,8 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
                               )
                             )
                         }
-                        r="20"
-                        fill="rgba(0, 0, 0, 0.7)"
+                        r="22"
+                        fill="rgba(0, 0, 0, 0.8)"
                         stroke={
                           isSelected ? "#f97316" : "rgba(255, 255, 255, 0.3)"
                         }
@@ -967,14 +1015,46 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
                                 )
                               )
                             ) -
-                          4
+                          6
                         }
                         textAnchor="middle"
                         dominantBaseline="middle"
                         className="font-bold fill-white pointer-events-none select-none"
-                        style={{ fontSize: "14px", fontWeight: "700" }}
+                        style={{ fontSize: "13px", fontWeight: "700" }}
                       >
                         {formatChordName(segment.chord.name)}
+                      </text>
+                      {/* Duration in beats */}
+                      <text
+                        x={
+                          130 +
+                          (midRadius + 18) *
+                            Math.cos(
+                              degToRad(
+                                beatToAngle(
+                                  segment.startBeat + segment.duration / 2
+                                )
+                              )
+                            )
+                        }
+                        y={
+                          130 +
+                          (midRadius + 18) *
+                            Math.sin(
+                              degToRad(
+                                beatToAngle(
+                                  segment.startBeat + segment.duration / 2
+                                )
+                              )
+                            ) +
+                          6
+                        }
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="font-medium fill-accent pointer-events-none select-none"
+                        style={{ fontSize: "10px" }}
+                      >
+                        {segment.duration % 1 === 0 ? segment.duration : segment.duration.toFixed(1)}
                       </text>
                       {/* Roman numeral - smaller below */}
                       <text
@@ -999,12 +1079,12 @@ const CircularProgressionView: React.FC<CircularProgressionViewProps> = ({
                                 )
                               )
                             ) +
-                          10
+                          16
                         }
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="font-semibold fill-gray-300 pointer-events-none select-none"
-                        style={{ fontSize: "10px" }}
+                        className="font-semibold fill-gray-400 pointer-events-none select-none"
+                        style={{ fontSize: "8px" }}
                       >
                         {segment.chord.romanNumeral}
                       </text>

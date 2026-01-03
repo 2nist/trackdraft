@@ -270,7 +270,7 @@ describe('EnhancedProgressionCard', () => {
     })
 
     it('displays theory content when expanded', () => {
-      render(
+      const { container } = render(
         <EnhancedProgressionCard
           progression={mockProgression}
           songKey={mockSongKey}
@@ -281,9 +281,12 @@ describe('EnhancedProgressionCard', () => {
       const toggleButton = screen.getByTestId('chevron-down').parentElement as HTMLButtonElement
       fireEvent.click(toggleButton)
 
-      // Should now show theory content
-      expect(screen.getByText('Notation:')).toBeInTheDocument()
-      expect(screen.getByText('When to use:')).toBeInTheDocument()
+      // Should now show theory content - use getAllByText since there might be multiple instances
+      const notationElements = screen.getAllByText('Notation:')
+      expect(notationElements.length).toBeGreaterThan(0)
+
+      const whenToUseElements = screen.getAllByText('When to use:')
+      expect(whenToUseElements.length).toBeGreaterThan(0)
     })
   })
 

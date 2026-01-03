@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Chord } from '../../types/music';
+import { DurationControl } from './DurationControl';
 import './ChordContextMenu.css';
 
 interface ChordContextMenuProps {
@@ -12,6 +13,17 @@ interface ChordContextMenuProps {
   readonly onAddSuspension: (suspension: 'sus2' | 'sus4') => void;
   readonly onTranspose: (direction: 'up' | 'down') => void;
   readonly onRemove?: () => void;
+  /** Optional: current duration in beats */
+  readonly duration?: number;
+  /** Optional: callback when duration changes */
+  readonly onDurationChange?: (beats: number) => void;
+  /** Optional: maximum duration allowed */
+  readonly maxDuration?: number;
+  /** Optional: show copy/insert actions */
+  readonly showActions?: boolean;
+  readonly onCopy?: () => void;
+  readonly onInsertBefore?: () => void;
+  readonly onInsertAfter?: () => void;
 }
 
 export function ChordContextMenu({
@@ -24,6 +36,13 @@ export function ChordContextMenu({
   onAddSuspension,
   onTranspose,
   onRemove,
+  duration,
+  onDurationChange,
+  maxDuration = 16,
+  showActions = false,
+  onCopy,
+  onInsertBefore,
+  onInsertAfter,
 }: ChordContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -67,6 +86,20 @@ export function ChordContextMenu({
       <div className="chord-context-menu-header">
         <span className="chord-context-menu-title">{chord.name || chord.romanNumeral}</span>
       </div>
+
+      {/* Duration Control Section */}
+      {onDurationChange && duration !== undefined && (
+        <div className="chord-context-menu-section">
+          <DurationControl
+            value={duration}
+            onChange={onDurationChange}
+            max={maxDuration}
+            min={0.5}
+            size="small"
+            showNoteSymbols={true}
+          />
+        </div>
+      )}
 
       <div className="chord-context-menu-section">
         <div className="chord-context-menu-label">Extend</div>
@@ -112,6 +145,24 @@ export function ChordContextMenu({
             >
               Remove chord
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Action buttons section */}
+      {showActions && (onCopy || onInsertBefore || onInsertAfter) && (
+        <div className="chord-context-menu-section">
+          <div className="chord-context-menu-label">Actions</div>
+          <div className="chord-context-menu-buttons">
+            {onCopy && (
+              <button onClick={() => { onCopy(); onClose(); }}>Copy</button>
+            )}
+            {onInsertBefore && (
+              <button onClick={() => { onInsertBefore(); onClose(); }}>+ Before</button>
+            )}
+            {onInsertAfter && (
+              <button onClick={() => { onInsertAfter(); onClose(); }}>+ After</button>
+            )}
           </div>
         </div>
       )}

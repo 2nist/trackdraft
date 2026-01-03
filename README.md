@@ -246,18 +246,44 @@ src/
 
 This is a personal project, but suggestions and feedback are welcome!
 
-## Optional: Reaper DAW Integration
+## Optional: REAPER DAW Integration
 
-TrackDraft includes an optional Reaper DAW bridge that allows syncing song sections and structures with Reaper. **This feature is completely optional** - TrackDraft works fully without it.
+TrackDraft includes TWO optional REAPER DAW integration methods. **Both are completely optional** - TrackDraft works fully without them.
 
-The bridge uses a lightweight Node.js server for communication (no complex dependencies like LuaSocket required). It works reliably on all platforms including Windows.
+### Method 1: HTTP Bridge (Recommended) ⭐
 
-To set up the Reaper bridge:
-1. See `reaper-bridge/ALTERNATIVE_SETUP.md` for detailed installation instructions
+The **HTTP Bridge** uses REAPER's built-in web interface for direct communication. **No additional software required!**
+
+**Features:**
+- ✅ Export song structure (markers, regions, chords)  
+- ✅ Transport control (play, pause, record)
+- ✅ Real-time playback sync
+- ✅ Simple setup - just enable REAPER's web interface
+
+**Setup:**
+1. Enable REAPER's web interface: `Options → Preferences → Control/OSC/Web`
+2. Add "Web Browser Interface" on port 8080
+3. In TrackDraft: `Settings → REAPER Integration → Connect`
+4. See `reaper-bridge/HTTP_BRIDGE_SETUP.md` for full instructions
+
+### Method 2: WebSocket Bridge (Advanced)
+
+The **WebSocket Bridge** uses a Node.js server for more advanced features.
+
+**Setup:**
+1. See `reaper-bridge/ALTERNATIVE_SETUP.md` for installation
 2. Start the bridge server with `npm run bridge`
-3. Load the bridge script in Reaper
+3. Load the bridge script in REAPER
 
-For more information, see `reaper-bridge/ALTERNATIVE_SETUP.md`.
+**Comparison:**
+
+| Feature | HTTP Bridge | WebSocket Bridge |
+|---------|-------------|------------------|
+| Setup Complexity | ⭐ Simple | ⭐⭐⭐ Complex |
+| Dependencies | None | Node.js Server |
+| Best For | Most users | Advanced users |
+
+**Recommendation**: Start with the HTTP Bridge. It's simpler and works out of the box!
 
 ## License
 

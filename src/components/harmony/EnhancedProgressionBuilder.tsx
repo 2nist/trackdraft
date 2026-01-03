@@ -4,13 +4,11 @@ import { useSchemaStore } from "../../store/schemaStore";
 import { chordSchemas } from "../../data/chordSchemas";
 import { romanNumeralToChord } from "../../lib/harmony/keyUtils";
 import {
-  getAllSubstitutions,
   SubstitutionOption,
 } from "../../lib/harmony/substitutions";
 import { Chord } from "../../types/music";
 import { Plus, ChevronDown, Save, X, Trash2, Play, Settings, Sparkles, BarChart3, Undo2, Redo2, Download, Trash } from "lucide-react";
 import CircularProgressionView from "./CircularProgressionView";
-import ChordEditorToolbar from "./ChordEditorToolbar";
 import { EnhancedProgressionCard } from "./EnhancedProgressionCard";
 import { TheoryPanel } from "./TheoryPanel";
 import { KeyChordPalette } from "./KeyChordPalette";
@@ -40,20 +38,13 @@ export default function EnhancedProgressionBuilder() {
   const [selectedChordIndex, setSelectedChordIndex] = useState<number | null>(
     null
   );
-  const [substitutions, setSubstitutions] = useState<{
-    commonTone: SubstitutionOption[];
-    functional: SubstitutionOption[];
-    modalInterchange: SubstitutionOption[];
-  } | null>(null);
   const [bars, setBars] = useState<number>(4);
   const [beatsPerBar, setBeatsPerBar] = useState<number>(4);
-  const [showSchemasDropdown, setShowSchemasDropdown] = useState(false);
   const [showSaveSchemaModal, setShowSaveSchemaModal] = useState(false);
   const [schemaName, setSchemaName] = useState("");
   const [showLabelProgressionModal, setShowLabelProgressionModal] =
     useState(false);
   const [progressionName, setProgressionName] = useState("");
-  const [leftSidebarTab, setLeftSidebarTab] = useState<"settings" | "templates" | "analysis">("settings");
   const [selectedCadence, setSelectedCadence] = useState<string>("");
 
   // Load custom schemas on mount
@@ -184,7 +175,6 @@ export default function EnhancedProgressionBuilder() {
     setProgression(chords);
     setSelectedSchema(schemaName);
     setSelectedChordIndex(null);
-    setSubstitutions(null);
     saveProgression(chords);
   };
 
@@ -238,7 +228,6 @@ export default function EnhancedProgressionBuilder() {
     const newProgression = progression.filter((_, i) => i !== index);
     setProgression(newProgression);
     setSelectedChordIndex(null);
-    setSubstitutions(null);
     saveProgression(newProgression);
   };
 
@@ -285,7 +274,6 @@ export default function EnhancedProgressionBuilder() {
     const rotated = [...progression.slice(1), progression[0]];
     setProgression(rotated);
     setSelectedChordIndex(null);
-    setSubstitutions(null);
     saveProgression(rotated);
   };
 
@@ -293,10 +281,7 @@ export default function EnhancedProgressionBuilder() {
     if (!currentSong) return;
 
     const chord = progression[index];
-    const subs = getAllSubstitutions(chord, currentSong.key);
-
     setSelectedChordIndex(index);
-    setSubstitutions(subs);
   };
 
   const handleChordModify = (index: number, modifiedChord: Chord) => {
@@ -307,10 +292,6 @@ export default function EnhancedProgressionBuilder() {
     newProgression[index] = { ...modifiedChord, beats };
     setProgression(newProgression);
     saveProgression(newProgression);
-    
-    // Update substitutions for the modified chord
-    const subs = getAllSubstitutions(modifiedChord, currentSong.key);
-    setSubstitutions(subs);
     
     // Keep the same chord selected
     setSelectedChordIndex(index);
@@ -323,7 +304,6 @@ export default function EnhancedProgressionBuilder() {
     const beats = newProgression[selectedChordIndex].beats || 2;
     newProgression[selectedChordIndex] = { ...substitution.chord, beats };
     setProgression(newProgression);
-    setSubstitutions(getAllSubstitutions(substitution.chord, currentSong!.key));
     saveProgression(newProgression);
   };
 
@@ -363,7 +343,6 @@ export default function EnhancedProgressionBuilder() {
     const beats = newProgression[selectedChordIndex].beats || 2;
     newProgression[selectedChordIndex] = { ...subChord, beats };
     setProgression(newProgression);
-    setSubstitutions(getAllSubstitutions(subChord, currentSong.key));
     saveProgression(newProgression);
     showSuccess(`Substituted with ${subChord.name}`);
   };
@@ -577,17 +556,36 @@ export default function EnhancedProgressionBuilder() {
     if (confirm("Clear the entire progression? This cannot be undone.")) {
       setProgression([]);
       setSelectedChordIndex(null);
-      setSubstitutions(null);
       saveProgression([]);
       showSuccess("Progression cleared");
     }
   };
 
   return (
-    <div className="space-y-2">
-      {/* Quick Actions Toolbar */}
-      <div className="flex items-center justify-between gap-1.5 flex-wrap py-1">
-        <div className="flex items-center gap-2">
+    <div className="h-full flex flex-col">
+      {/* Compact Toolbar - Only essentials */}
+      <div className="flex items-center justify-between gap-2 px-2 py-1 border-b border-gray-800 flex-shrink-0">
+        <div className="flex items-center gap-1.5">
+          {/* Undo/Redo */}
+          <button
+            onClick={undo}
+            disabled={!canUndo()}
+            className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded hover:bg-gray-800"
+            title="Undo (Ctrl+Z)"
+          >
+            <Undo2 size={14} />
+          </button>
+          <button
+            onClick={redo}
+            disabled={!canRedo()}
+            className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded hover:bg-gray-800"
+            title="Redo (Ctrl+Shift+Z)"
+          >
+            <Redo2 size={14} />
+          </button>
+
+          <div className="w-px h-4 bg-gray-700"></div>
+
           {/* Cadence Insertion */}
           {progression.length > 0 && (
             <select
@@ -599,12 +597,12 @@ export default function EnhancedProgressionBuilder() {
               }}
               className="px-2 py-1 text-xs bg-black border border-gray-700 rounded text-white focus:outline-none focus:border-accent"
             >
-              <option value="">Insert Cadence...</option>
-              <option value="authentic">Authentic (V - I)</option>
-              <option value="plagal">Plagal (IV - I)</option>
-              <option value="half">Half (V)</option>
-              <option value="deceptive">Deceptive (V - vi)</option>
-              <option value="phrygian">Phrygian (iv - I)</option>
+              <option value="">Cadence...</option>
+              <option value="authentic">Authentic</option>
+              <option value="plagal">Plagal</option>
+              <option value="half">Half</option>
+              <option value="deceptive">Deceptive</option>
+              <option value="phrygian">Phrygian</option>
             </select>
           )}
 
@@ -612,404 +610,92 @@ export default function EnhancedProgressionBuilder() {
           {progression.length > 0 && (
             <button
               onClick={handleClearProgression}
-              className="flex items-center gap-1 px-2 py-0.5 text-xs bg-black border border-gray-700 rounded text-white hover:bg-gray-800 hover:border-gray-600 transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-black border border-gray-700 rounded text-white hover:bg-gray-800 hover:border-gray-600 transition-colors"
               title="Clear progression"
             >
               <Trash size={12} />
-              Clear
             </button>
           )}
-
-          {/* Undo/Redo */}
-          <div className="flex items-center gap-0.5 border-l border-gray-700 pl-1.5">
-            <button
-              onClick={undo}
-              disabled={!canUndo()}
-              className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title="Undo (Ctrl+Z)"
-            >
-              <Undo2 size={14} />
-            </button>
-            <button
-              onClick={redo}
-              disabled={!canRedo()}
-              className="p-1 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              title="Redo (Ctrl+Shift+Z)"
-            >
-              <Redo2 size={14} />
-            </button>
-          </div>
         </div>
 
+        {/* Right side - Save buttons */}
+        <div className="flex items-center gap-1.5">
+          {progression.length > 0 && (
+            <>
+              <button
+                onClick={() => setShowLabelProgressionModal(true)}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 border-none rounded text-white font-medium transition-colors"
+                title="Save progression with a name"
+              >
+                <Save size={12} />
+                Save
+              </button>
+              <button
+                onClick={() => setShowSaveSchemaModal(true)}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-black border border-gray-700 hover:bg-gray-800 rounded text-white font-medium transition-colors"
+                title="Save as reusable template"
+              >
+                <Save size={12} />
+                Template
+              </button>
+            </>
+          )}
+
+          {connected && progression.length > 0 && (
+            <button
+              onClick={handleSendToReaper}
+              disabled={sending}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-black hover:bg-gray-800 border border-gray-700 hover:border-white rounded text-white font-medium transition-colors disabled:opacity-50"
+              title="Send to Reaper"
+            >
+              {sending ? (
+                <div className="w-2.5 h-2.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Play size={12} />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Progression Visualization */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-1.5 h-[calc(100vh-12rem)]">
-        {/* Left Sidebar - Tabs for Settings, Templates, Analysis */}
-        <div className="lg:col-span-2 flex flex-col">
-          <div className="card flex-1 overflow-hidden flex flex-col">
-            {/* Tab Navigation */}
-            <div className="flex items-center border-b border-gray-800 flex-shrink-0">
-              <button
-                onClick={() => setLeftSidebarTab("settings")}
-                className={`flex-1 px-1.5 py-1 text-xs font-medium transition-colors border-b-2 ${
-                  leftSidebarTab === "settings"
-                    ? "border-accent text-white"
-                    : "border-transparent text-gray-400 hover:text-white"
-                }`}
-                title="Settings"
-              >
-                <Settings size={12} className="mx-auto" />
-              </button>
-              <button
-                onClick={() => setLeftSidebarTab("templates")}
-                className={`flex-1 px-1.5 py-1 text-xs font-medium transition-colors border-b-2 ${
-                  leftSidebarTab === "templates"
-                    ? "border-accent text-white"
-                    : "border-transparent text-gray-400 hover:text-white"
-                }`}
-                title="Templates"
-              >
-                <Sparkles size={12} className="mx-auto" />
-              </button>
-              <button
-                onClick={() => setLeftSidebarTab("analysis")}
-                className={`flex-1 px-1.5 py-1 text-xs font-medium transition-colors border-b-2 ${
-                  leftSidebarTab === "analysis"
-                    ? "border-accent text-white"
-                    : "border-transparent text-gray-400 hover:text-white"
-                }`}
-                title="Analysis"
-              >
-                <BarChart3 size={12} className="mx-auto" />
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            <div className="flex-1 overflow-y-auto">
-              {/* Settings Tab */}
-              {leftSidebarTab === "settings" && (
-                <div className="p-2 space-y-2.5">
-                  {/* Time Signature Group */}
-                  <div className="space-y-1.5">
-                    <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
-                      Time Signature
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <div>
-                        <label className="block text-[10px] font-medium text-gray-400 mb-0.5">
-                          Bars
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="16"
-                          value={bars}
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value) || 1;
-                            setBars(Math.max(1, Math.min(16, value)));
-                          }}
-                          className="w-full px-1.5 py-1 text-xs bg-black border border-gray-700 rounded text-white focus:outline-none focus:border-accent"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-medium text-gray-400 mb-0.5">
-                          Beats/Bar
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          max="8"
-                          value={beatsPerBar}
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value) || 1;
-                            setBeatsPerBar(Math.max(1, Math.min(8, value)));
-                          }}
-                          className="w-full px-1.5 py-1 text-xs bg-black border border-gray-700 rounded text-white focus:outline-none focus:border-accent"
-                        />
-                      </div>
-                    </div>
-                    {/* Total Beats Display */}
-                    <div className="pt-1.5 pb-1 border-t border-gray-800">
-                      <div className="text-[10px] text-gray-500 mb-0.5">Total Beats</div>
-                      <div className="text-base font-bold text-white">{totalBeats}</div>
-                      <div className="text-[10px] text-gray-500">
-                        {bars} bar{bars !== 1 ? "s" : ""} × {beatsPerBar}/4
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Tempo Group */}
-                  <div className="space-y-1.5">
-                    <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
-                      Tempo
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5">
-                        BPM
-                      </label>
-                      <input
-                        type="number"
-                        min="60"
-                        max="200"
-                        value={currentSong?.tempo || 120}
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 120;
-                          updateTempo(Math.max(60, Math.min(200, value)));
-                        }}
-                        className="w-full px-1.5 py-1 text-xs bg-black border border-gray-700 rounded text-white focus:outline-none focus:border-accent"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Key/Mode Group */}
-                  <div className="space-y-1.5">
-                    <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
-                      Key & Mode
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-medium text-gray-400 mb-0.5">
-                        Mode
-                      </label>
-                      <select
-                        value={currentSong?.key.mode || "major"}
-                        onChange={(e) => {
-                          if (currentSong) {
-                            updateKey({
-                              root: currentSong.key.root,
-                              mode: e.target.value as
-                                | "major"
-                                | "minor"
-                                | "dorian"
-                                | "phrygian"
-                                | "lydian"
-                                | "mixolydian"
-                                | "locrian",
-                            });
-                          }
-                        }}
-                        className="w-full px-1.5 py-1 text-xs bg-black border border-gray-700 rounded text-white focus:outline-none focus:border-accent"
-                      >
-                        <option value="major">Major</option>
-                        <option value="dorian">Dorian</option>
-                        <option value="phrygian">Phrygian</option>
-                        <option value="lydian">Lydian</option>
-                        <option value="mixolydian">Mixolydian</option>
-                        <option value="minor">Minor</option>
-                        <option value="locrian">Locrian</option>
-                      </select>
-                    </div>
-                    <div className="text-[10px] text-gray-600 italic">
-                      Change key in circle
-                    </div>
-                  </div>
-
-                  {/* Advanced Actions */}
-                  {progression.length > 0 && (
-                    <div className="space-y-1.5 pt-1.5 border-t border-gray-800">
-                      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
-                        Actions
-                      </div>
-                      {/* Send to Reaper Button */}
-                      {connected && (
-                        <button
-                          onClick={handleSendToReaper}
-                          disabled={sending}
-                          className="w-full flex items-center justify-center gap-1 px-2 py-1 bg-black hover:bg-gray-800 border border-gray-700 hover:border-white rounded text-white text-[10px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Send chord track to Reaper"
-                        >
-                          {sending ? (
-                            <>
-                              <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              Sending...
-                            </>
-                          ) : (
-                            <>
-                              <Play size={12} />
-                              Send to Reaper
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Templates Tab */}
-              {leftSidebarTab === "templates" && (
-                <div className="p-3 space-y-3">
-                  <div className="text-xs font-semibold text-white mb-2">
-                    Chord Progression Templates
-                  </div>
-                  <div className="space-y-2 max-h-[calc(100vh-20rem)] overflow-y-auto">
-                    {/* Built-in Schemas */}
-                    {chordSchemas.slice(0, 20).map((schema) => {
-                      const difficultyColors = {
-                        beginner: "bg-green-500/20 text-green-300 border-green-500/50",
-                        intermediate: "bg-yellow-500/20 text-yellow-300 border-yellow-500/50",
-                        advanced: "bg-red-500/20 text-red-300 border-red-500/50",
-                      };
-                      return (
-                        <button
-                          key={schema.name}
-                          onClick={() => handleSchemaSelect(schema.name)}
-                          className={`w-full text-left p-2 rounded border transition-all ${
-                            selectedSchema === schema.name
-                              ? "bg-accent/10 border-accent"
-                              : "bg-gray-800/50 border-gray-700 hover:bg-gray-700/50 hover:border-gray-600"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <div className="font-semibold text-white text-xs">
-                              {schema.name}
-                            </div>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${difficultyColors[schema.difficulty]}`}>
-                              {schema.difficulty}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-300 font-mono mb-1">
-                            {schema.progression.join(" - ")}
-                          </div>
-                          <div className="text-[10px] text-gray-400 italic">
-                            {schema.emotionalContext}
-                          </div>
-                        </button>
-                      );
-                    })}
-
-                    {/* Custom Schemas */}
-                    {customSchemas.length > 0 && (
-                      <>
-                        <div className="border-t border-gray-700 my-2"></div>
-                        <div className="text-[10px] text-gray-400 font-semibold mb-1.5">
-                          Custom
-                        </div>
-                        {customSchemas.map((schema) => {
-                          return (
-                            <div
-                              key={schema.name}
-                              className="flex items-center group"
-                            >
-                              <button
-                                onClick={() => handleSchemaSelect(schema.name)}
-                                className={`flex-1 text-left p-1.5 rounded border transition-all ${
-                                  selectedSchema === schema.name
-                                    ? "bg-accent/10 border-accent"
-                                    : "bg-gray-800/50 border-gray-700 hover:bg-gray-700/50"
-                                }`}
-                              >
-                                <div className="font-semibold text-white text-[11px] mb-0.5">
-                                  {schema.name}
-                                </div>
-                                <div className="text-[10px] text-gray-300 font-mono">
-                                  {schema.progression.join(" - ")}
-                                </div>
-                              </button>
-                              <button
-                                onClick={(e) => handleDeleteSchema(schema.name, e)}
-                                className="opacity-0 group-hover:opacity-100 p-0.5 text-red-400 hover:text-red-300 transition-opacity ml-1"
-                                title="Delete schema"
-                              >
-                                <Trash2 size={10} />
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Analysis Tab */}
-              {leftSidebarTab === "analysis" && (
-                <div className="p-2">
-                  {progression.length > 0 && currentSong ? (
-                    <EnhancedProgressionCard
-                      progression={progression}
-                      songKey={currentSong.key}
-                    />
-                  ) : (
-                    <div className="text-center py-6 text-gray-500 text-xs">
-                      Build a progression to see analysis
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Main Content - Centered Wheel */}
+      <div className="flex-1 flex gap-2 p-2 min-h-0">
+        {/* Center: Chord Wheel - Full Focus */}
+        <div className="flex-1 card flex items-center justify-center p-2">
+          <CircularProgressionView
+            progression={progression}
+            selectedIndex={selectedChordIndex}
+            onChordClick={handleChordClick}
+            onChordRemove={handleRemoveChord}
+            onBeatsChange={handleBeatsChange}
+            totalBeats={totalBeats}
+            beatsPerBar={beatsPerBar}
+            onChordModify={handleChordModify}
+            onProgressionReorder={(newProgression) => {
+              setProgression(newProgression);
+              saveProgression(newProgression);
+            }}
+            onAddChord={handleAddChord}
+            isAddChordMode={false}
+          />
         </div>
 
-        {/* Main Visualization */}
-        <div className="lg:col-span-7 flex flex-col h-[calc(100vh-12rem)]">
-          <div
-            className="card p-1 flex items-center justify-center relative"
-            style={{ height: "100%" }}
-          >
-            <CircularProgressionView
-              progression={progression}
-              selectedIndex={selectedChordIndex}
-              onChordClick={handleChordClick}
-              onChordRemove={handleRemoveChord}
-              onBeatsChange={handleBeatsChange}
-              totalBeats={totalBeats}
-              onChordModify={handleChordModify}
-              onProgressionReorder={(newProgression) => {
-                setProgression(newProgression);
-                saveProgression(newProgression);
-              }}
-              onAddChord={handleAddChord}
-              isAddChordMode={false}
-            />
-            
-          </div>
-        </div>
-
-        {/* Right Sidebar - Chord Builder Panel */}
-        <div className="lg:col-span-3 flex flex-col h-[calc(100vh-12rem)]">
-          <div className="rounded-xl bg-black h-full flex flex-col overflow-hidden p-0">
-            {/* Chord Builder Header */}
+        {/* Right Sidebar - Theory & Chords (Compact) */}
+        <div className="w-64 flex flex-col">
+          <div className="card flex-1 overflow-hidden flex flex-col p-0">
+            {/* Progression Chords */}
             <div className="flex-shrink-0 px-3 pt-2 pb-2 border-b border-gray-800">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white">Chord Builder</h3>
-                {progression.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setShowLabelProgressionModal(true)}
-                      className="flex items-center gap-1 px-2 py-0.5 text-xs bg-blue-600 hover:bg-blue-700 border-none rounded text-white font-medium transition-colors"
-                      title="Save progression with a name"
-                    >
-                      <Save size={12} />
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setShowSaveSchemaModal(true)}
-                      className="flex items-center gap-1 px-2 py-0.5 text-xs bg-black border border-gray-700 hover:bg-gray-800 rounded text-white font-medium transition-colors"
-                      title="Save as reusable template"
-                    >
-                      <Save size={12} />
-                      Template
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Progression Display */}
-            <div className="flex-shrink-0 px-3 py-3 border-b border-gray-800">
-              <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">
-                Progression
+              <div className="text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wide">
+                {progression.length} Chord{progression.length !== 1 ? 's' : ''}
               </div>
               {progression.length > 0 ? (
-                <div className="flex items-center justify-center gap-1.5 flex-wrap p-1">
+                <div className="flex items-center gap-1 flex-wrap">
                   {progression.map((chord, index) => (
                     <div
                       key={`${chord.romanNumeral}-${index}`}
-                      className="transition-all"
                       onClick={() => handleChordClick(index)}
-                      style={{ cursor: 'pointer' }}
-                      title="Click to select chord"
+                      className="cursor-pointer hover:opacity-80 transition-opacity"
+                      title="Click to select"
                     >
                       <ChordShape
                         chordQuality={chord.quality}
@@ -1030,14 +716,14 @@ export default function EnhancedProgressionBuilder() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-gray-500 text-xs italic">
-                  No chords yet. Click hexagon chords to add.
+                <div className="text-[10px] text-gray-500 italic">
+                  Add chords from hexagon
                 </div>
               )}
             </div>
 
-            {/* Theory Panel - Scrollable */}
-            <div className="flex-1 overflow-y-auto px-3 pt-3">
+            {/* Theory Panel */}
+            <div className="flex-1 overflow-y-auto px-3 pt-3 pb-3">
               <TheoryPanel
                 selectedChord={
                   selectedChordIndex !== null
@@ -1055,38 +741,6 @@ export default function EnhancedProgressionBuilder() {
                 onAddNextChord={handleAddNextChord}
               />
             </div>
-
-            {/* Chord Editor Toolbar - Scrollable (hidden for now, can be toggled) */}
-            {false && (
-              <div className="flex-1 overflow-y-auto px-2 pt-0.5">
-                <ChordEditorToolbar
-                  chord={
-                    selectedChordIndex !== null
-                      ? progression[selectedChordIndex] || null
-                      : null
-                  }
-                  substitutions={substitutions}
-                  onSubstitute={handleSubstitute}
-                  onRotate={handleRotate}
-                canRotate={progression.length > 0}
-                onBeatsChange={
-                  selectedChordIndex !== null
-                    ? (beats: number) =>
-                        handleBeatsChange(selectedChordIndex, beats)
-                    : undefined
-                }
-                onRemove={
-                  selectedChordIndex !== null
-                    ? () => handleRemoveChord(selectedChordIndex)
-                    : undefined
-                }
-                onClose={() => {
-                  setSelectedChordIndex(null);
-                  setSubstitutions(null);
-                }}
-              />
-              </div>
-            )}
           </div>
         </div>
       </div>

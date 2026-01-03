@@ -28,6 +28,24 @@ export interface Chord {
   name?: string;
   /** Optional: number of beats this chord lasts (default: 2) */
   beats?: number;
+  /** Optional: duration in beats (0.5, 1, 1.5, 2, etc.) - preferred over beats */
+  durationBeats?: number;
+  /** Optional: starting beat position in the progression (0-based) */
+  startBeat?: number;
+  /** Optional: bass note for slash chords (e.g., "E" for C/E) */
+  bass?: string;
+}
+
+/**
+ * Extended chord type for use in progressions with beat-based timing
+ */
+export interface ChordInProgression extends Chord {
+  /** Unique identifier for this chord instance */
+  id: string;
+  /** Duration in beats (required for progression chords) */
+  durationBeats: number;
+  /** Starting beat position in the progression (0-based) */
+  startBeat: number;
 }
 
 /**
@@ -42,6 +60,34 @@ export interface ChordProgression {
   emotionalContext: string;
   /** Optional: difficulty level */
   difficulty?: "beginner" | "intermediate" | "advanced";
+}
+
+/**
+ * Enhanced progression with beat-based timing information
+ */
+export interface Progression {
+  /** Unique identifier */
+  id: string;
+  /** Name of the progression (e.g., "Verse Progression A") */
+  name: string;
+  /** Musical key root (e.g., "C", "D", "F#") */
+  key: string;
+  /** Musical mode */
+  mode: "major" | "minor" | "dorian" | "phrygian" | "lydian" | "mixolydian" | "locrian";
+  /** Time signature as [numerator, denominator] (e.g., [4, 4] for 4/4) */
+  timeSignature: [number, number];
+  /** Total length in beats */
+  totalBeats: number;
+  /** Tempo in BPM for playback preview */
+  bpm: number;
+  /** Array of chords with timing information */
+  chords: ChordInProgression[];
+  /** Section type this progression belongs to */
+  sectionType?: "verse" | "chorus" | "bridge" | "pre-chorus" | "intro" | "outro";
+  /** Creation timestamp */
+  createdAt?: string;
+  /** Last update timestamp */
+  updatedAt?: string;
 }
 
 /**

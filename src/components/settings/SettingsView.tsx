@@ -4,6 +4,7 @@ import { Settings, Trash2, Download, Upload, Save } from 'lucide-react';
 import { useToastStore } from '../../store/toastStore';
 import { exportSong } from '../../lib/export';
 import ImportDialog from '../common/ImportDialog';
+import REAPERHTTPBridgePanel from '../BridgeStatus/REAPERHTTPBridgePanel';
 
 export default function SettingsView() {
   const { songs, currentSong } = useSongStore();
@@ -168,6 +169,12 @@ export default function SettingsView() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* REAPER Integration */}
+        <div className="card">
+          <h2 className="text-xl font-semibold text-white mb-4">REAPER Integration</h2>
+          <REAPERHTTPBridgePanel />
         </div>
 
         {/* Application Info */}
